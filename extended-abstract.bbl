@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{10}
+\begin{thebibliography}{11}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -165,6 +165,19 @@
 \urldef\tempurl%
 \url{https://doi.org/10.1109/hust.2014.8}
 \showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Holth}{Holth}{[n. d.]}]%
+        {Wheels}
+\bibfield{author}{\bibinfo{person}{Daniel Holth}.} \bibinfo{year}{[n.
+  d.]}\natexlab{}.
+\newblock \bibinfo{title}{PEP 427 -- The Wheel Binary Package Format 1.0}.
+\newblock
+\newblock
+\urldef\tempurl%
+\url{https://www.python.org/dev/peps/pep-0427/}
+\showURL{%
+\tempurl}
 
 
 \bibitem[\protect\citeauthoryear{Hoste, Timmerman, Georges, and Weirdt}{Hoste

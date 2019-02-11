@@ -181,7 +181,7 @@ In order to handle multiple CPU architectures, we have configured EasyBuild to i
 When a software package is built for multiple architectures, the same recipe is used for all of them. While each cluster will typically show only a single architecture, users are allowed to select a different architecture if they wish to run exactly the same binary as on another cluster. 
 
 \subsection{Packages for scripting languages}
-Whenever a software package supports the installation of subpackages, as is the case with the Python, R, or Perl scripting languages, we leverage the existing package manager of that language, rather than installing subpackages as modules. In the case of Python, we are building Python wheels [11] against our software stack. Wheels are binary packages that can be installed in a matter of seconds, similar to CentOS RPM packages. Since they are built by our team, and linked against our optimize software stack, we ensure that they are both easy to installed and offer good performance.
+Whenever a software package supports the installation of subpackages, as is the case with the Python, R, or Perl scripting languages, we leverage the existing package manager of that language, rather than installing subpackages as modules. In the case of Python, we are building Python wheels \cite{Wheels} against our software stack. Wheels are binary packages that can be installed in a matter of seconds, similar to CentOS RPM packages. Since they are built by our team, and linked against our optimize software stack, we ensure that they are both easy to installed and offer good performance.
 
 
 \subsection{Licensed software packages}
