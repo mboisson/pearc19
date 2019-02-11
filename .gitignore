@@ -6,3 +6,5 @@ acmart.pdf
 *.gz
 *.xcp
 .*.lb
+extended-abstract.blg
+extended-abstract.pdf

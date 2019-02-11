@@ -1,0 +1,205 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{10}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{Alvarez, O'Cais, Geimer, and Hoste}{Alvarez
+  et~al\mbox{.}}{2017}]%
+        {EasyBuild2016}
+\bibfield{author}{\bibinfo{person}{D. Alvarez}, \bibinfo{person}{A. O'Cais},
+  \bibinfo{person}{M. Geimer}, {and} \bibinfo{person}{K. Hoste}.}
+  \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Scientific Software Management in Real Life:
+  Deployment of EasyBuild on a Large Scale System}. In
+  \bibinfo{booktitle}{\emph{2016 Third International Workshop on HPC User
+  Support Tools (HUST)}}, Vol.~\bibinfo{volume}{00}. IEEE,
+  \bibinfo{pages}{31--40}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/HUST.2016.009}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Amadio and Xu}{Amadio and Xu}{2016}]%
+        {Gentoo}
+\bibfield{author}{\bibinfo{person}{Guilherme Amadio} {and}
+  \bibinfo{person}{Benda Xu}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Portage: Bringing Hackers' Wisdom to Science}.
+\newblock  (\bibinfo{date}{10} \bibinfo{year}{2016}).
+\newblock
+\showeprint{1610.02742}
+\urldef\tempurl%
+\url{https://arxiv.org/pdf/1610.02742}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Buncic, Sanchez, Blomer, Franco, Harutyunian,
+  Mato, and Yao}{Buncic et~al\mbox{.}}{2010}]%
+        {CVMFS}
+\bibfield{author}{\bibinfo{person}{P Buncic}, \bibinfo{person}{C~Aguado
+  Sanchez}, \bibinfo{person}{J Blomer}, \bibinfo{person}{L Franco},
+  \bibinfo{person}{A Harutyunian}, \bibinfo{person}{P Mato}, {and}
+  \bibinfo{person}{Y Yao}.} \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{CernVM -- a virtual software appliance for LHC
+  applications}.
+\newblock \bibinfo{journal}{\emph{Journal of Physics: Conference Series}}
+  \bibinfo{volume}{219}, \bibinfo{number}{4} (\bibinfo{date}{Apr}
+  \bibinfo{year}{2010}), \bibinfo{pages}{042003}.
+\newblock
+\showISSN{1742-6596}
+\urldef\tempurl%
+\url{https://doi.org/10.1088/1742-6596/219/4/042003}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{DOLSTRA, L{\"O}H, and PIERRON}{DOLSTRA
+  et~al\mbox{.}}{2010}]%
+        {Nix}
+\bibfield{author}{\bibinfo{person}{EELCO DOLSTRA}, \bibinfo{person}{ANDRES
+  L{\"O}H}, {and} \bibinfo{person}{NICOLAS PIERRON}.}
+  \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{NixOS: A purely functional Linux distribution}.
+\newblock \bibinfo{journal}{\emph{Journal of Functional Programming}}
+  \bibinfo{volume}{20}, \bibinfo{number}{5-6} (\bibinfo{date}{Oct}
+  \bibinfo{year}{2010}), \bibinfo{pages}{577--615}.
+\newblock
+\showISSN{1469-7653}
+\urldef\tempurl%
+\url{https://doi.org/10.1017/s0956796810000195}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Furlani}{Furlani}{1991}]%
+        {Modules1991}
+\bibfield{author}{\bibinfo{person}{John~L. Furlani}.}
+  \bibinfo{year}{1991}\natexlab{}.
+\newblock \showarticletitle{Modules: Providing a Flexible User Environment}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the Fifth Large Installation Systems
+  Administration Conference}}. USENIX Association, \bibinfo{pages}{141--152}.
+\newblock
+\newblock
+\shownote{Sepember 30 - October 3, 1991 San Diego, California, USA.}
+
+
+\bibitem[\protect\citeauthoryear{Furlani and Osel}{Furlani and Osel}{1996}]%
+        {Modules1996}
+\bibfield{author}{\bibinfo{person}{John~L. Furlani} {and}
+  \bibinfo{person}{Peter~W. Osel}.} \bibinfo{year}{1996}\natexlab{}.
+\newblock \showarticletitle{Abstract Yourself With Modules}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 10th USENIX Conference on System
+  Administration}} \emph{(\bibinfo{series}{LISA '96})}.
+  \bibinfo{publisher}{USENIX Association}, \bibinfo{address}{Berkeley, CA,
+  USA}, \bibinfo{pages}{193--204}.
+\newblock
+\urldef\tempurl%
+\url{http://dl.acm.org/citation.cfm?id=1029824.1029858}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Gamblin, LeGendre, Collette, Lee, Moody,
+  de~Supinski, and Futral}{Gamblin et~al\mbox{.}}{2015}]%
+        {Spack}
+\bibfield{author}{\bibinfo{person}{Todd Gamblin}, \bibinfo{person}{Matthew
+  LeGendre}, \bibinfo{person}{Michael~R. Collette}, \bibinfo{person}{Gregory~L.
+  Lee}, \bibinfo{person}{Adam Moody}, \bibinfo{person}{Bronis~R. de Supinski},
+  {and} \bibinfo{person}{Scott Futral}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{The Spack package manager}.
+\newblock \bibinfo{journal}{\emph{Proceedings of the International Conference
+  for High Performance Computing, Networking, Storage and Analysis on - SC
+  '15}} (\bibinfo{year}{2015}).
+\newblock
+\showISBNx{9781450337236}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/2807591.2807623}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Geimer, Hoste, and McLay}{Geimer
+  et~al\mbox{.}}{2014}]%
+        {EasyBuild2014}
+\bibfield{author}{\bibinfo{person}{Markus Geimer}, \bibinfo{person}{Kenneth
+  Hoste}, {and} \bibinfo{person}{Robert McLay}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Modern Scientific Software Management Using
+  EasyBuild and Lmod}.
+\newblock \bibinfo{journal}{\emph{2014 First International Workshop on HPC User
+  Support Tools}} (\bibinfo{date}{Nov} \bibinfo{year}{2014}).
+\newblock
+\showISBNx{9781467367554}
+\urldef\tempurl%
+\url{https://doi.org/10.1109/hust.2014.8}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Hoste, Timmerman, Georges, and Weirdt}{Hoste
+  et~al\mbox{.}}{2012}]%
+        {EasyBuild2012}
+\bibfield{author}{\bibinfo{person}{Kenneth Hoste}, \bibinfo{person}{Jens
+  Timmerman}, \bibinfo{person}{Andy Georges}, {and} \bibinfo{person}{Stijn~De
+  Weirdt}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{EasyBuild: Building Software with Ease}.
+\newblock \bibinfo{journal}{\emph{2012 SC Companion: High Performance
+  Computing, Networking Storage and Analysis}} (\bibinfo{date}{Nov}
+  \bibinfo{year}{2012}).
+\newblock
+\showISBNx{9781467362184}
+\urldef\tempurl%
+\url{https://doi.org/10.1109/sc.companion.2012.81}
+\showDOI{\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{McLay, Schulz, Barth, and Minyard}{McLay
+  et~al\mbox{.}}{2011}]%
+        {Lmod}
+\bibfield{author}{\bibinfo{person}{Robert McLay}, \bibinfo{person}{Karl~W.
+  Schulz}, \bibinfo{person}{William~L. Barth}, {and} \bibinfo{person}{Tommy
+  Minyard}.} \bibinfo{year}{2011}\natexlab{}.
+\newblock \showarticletitle{Best Practices for the Deployment and Management of
+  Production HPC Clusters}. In \bibinfo{booktitle}{\emph{State of the Practice
+  Reports}} \emph{(\bibinfo{series}{SC '11})}. \bibinfo{publisher}{ACM},
+  \bibinfo{address}{New York, NY, USA}, Article \bibinfo{articleno}{9},
+  \bibinfo{numpages}{11}~pages.
+\newblock
+\showISBNx{978-1-4503-1139-7}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/2063348.2063360}
+\showDOI{\tempurl}
+
+
+\end{thebibliography}
