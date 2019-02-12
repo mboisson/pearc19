@@ -1,7 +1,10 @@
 %
 % The first command in your LaTeX source must be the \documentclass command.
 \documentclass[sigconf]{acmart}
-
+%\usepackage[french]{babel}
+%\selectlanguage{french}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 %
 % defining the \BibTeX command - from Oren Patashnik's original BibTeX documentation.
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08emT\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -46,7 +49,7 @@
 
 %
 % The "title" command has an optional parameter, allowing the author to define a "short title" to be used in page headers.
-\title{Providing A Unified User Environment for Canada’s National Advanced Computing Centers}
+\title{Providing A Unified User Environment for Canada National Advanced Computing Centers}
 
 %
 % The "author" command and its associated commands are used to define the authors and their affiliations.
@@ -154,8 +157,8 @@ choices.
 
 The first principle is that software packages should be available on every cluster (unless not permitted because of
 license or hardware reasons). This means that we need a scalable resilient multi-site distribution mechanism. There are
-a few solutions that could be used, and we will discuss them in Section 1. The solution we opted for is Cern Virtual
-Machine File System, or CVMFS\cite{CVMFS}.
+a few solutions that could be used, and we will discuss them in Section~\ref{sec:Distribution_mechanism}. The solution
+we opted for is Cern Virtual Machine File System, or CVMFS\cite{CVMFS}.
 
 The second principle is that the software environment should be decoupled from the underlying operating system. When we
 first designed the solution, new clusters were being deployed with the CentOS 7 operating system. However, there was
@@ -164,7 +167,7 @@ packages installed. Finally, Compute Canada also operates several OpenStack clou
 machines running any Linux distribution. In order to use the unified software environment on virtual machines and
 multiple clusters, we needed a compatibility layer. The solution we initially deployed is Nix \cite{Nix}, although we
 are experimenting with Gentoo Prefix \cite{Gentoo} as a replacement because of issues we encountered with Nix. We will
-discuss these options in Section 2.
+discuss these options in Section~\ref{sec:Compatibility_layer}.
 
 The third principle is that installation procedures should be tracked and reproducible. This means that automation is
 needed. The solution identified for the compatibility layer already addresses this issue. However, these solutions
@@ -177,10 +180,11 @@ with a very large number of software packages installed. All of our clusters wer
 \cite{Modules1991,Modules1996}. However, the traditional systems of modules become unwieldy to handle at the scale of
 thousands of installed modules. Using a hierarchical module tree, which is possible in a newer implementation of
 environment modules called Lmod \cite{Lmod}, helps address this problem. We will discuss how our implementation meets
-the third and fourth principles in Section 3.
+the third and fourth principles in Section~\ref{sec:Scientific_applications}.
 
 
 \section{Distribution mechanism}
+\label{sec:Distribution_mechanism}
 Installing software packages on a single cluster can be done through a shared file system, such as NFS, Lustre, or
 GPFS. Anyone who has been working in the field of high performance computing for a number of years knows that parallel
 file systems are often a bottleneck, especially for the IO pattern caused by the action of launching applications. In
@@ -203,6 +207,7 @@ client pulls the files it needs when it needs them. Multiple node-wise, cluster-
 that pulling files is efficient.
 
 \subsection{CVMFS structure}
+\label{sub:CVMFS_structure}
 CVMFS is designed similarly to the Network Time Protocol stratum model. There is one source of truth, which is called
 the stratum 0. This is the injection point for new software packages that are to be deployed on the cluster. This
 server is never accessed directly by the end users or the clusters. This means that if it has a failure, the only
@@ -223,11 +228,13 @@ setup on a shared file system if compute nodes do not have local disks. This can
 single point of failure.
 
 \section{Compatibility layer}
+\label{sec:Compatibility_layer}
 In order to detach the software stack from the underlying operating system, we need a layer that allows to build almost
 everything, down to the C library. The only exclusions that we do not include are the Linux kernel, kernel modules,
 drivers, and anything that is to be run as a privileged user.
 
 \subsection{Nix}
+\label{sub:Nix}
 Nix \cite{Nix} is both a package manager and an operating system (NixOS). Its core principle is reproducibility.
 Therefore, the recipes attempt very hard and mostly succeed to not depend on the underlying operating system at all.
 Every software built with Nix is installed inside a folder named by the hash of its recipe and that of its
@@ -237,10 +244,13 @@ security issues, which is made very hard by the design choices in Nix. At the ti
 using Nix as a compatibility layer, but we are investigating a switch to Gentoo Prefix described next.
 
 \subsection{Gentoo Prefix}
+\label{sub:Gentoo_Prefix}
 
 \section{Scientific applications}
+\label{sec:Scientific_applications}
 
 \subsection{Compiled software packages}
+\label{sub:Compiled_software_packages}
 The majority of our software stack is made up of scientific software that are performance critical. This implies that
 they cannot be installed in the compatibility layer described above, because different clusters support different sets
 of CPU instructions. To install these packages, we use a package manager called EasyBuild
@@ -260,6 +270,7 @@ load specific modules that might be available only with specific toolchains.
 
 
 \subsection{Handling multiple CPU architectures}
+\label{sub:Handling_multiple_CPU_architectures}
 In order to handle multiple CPU architectures, we have configured EasyBuild to install software packages in a different
 directory and module tree based on the architecture requested. There is also a wide selection of software packages that
 are installed in an architecture-independent fashion. This is the case, for example, for binary packages, packages that
@@ -270,6 +281,7 @@ cluster will typically show only a single architecture, users are allowed to sel
 wish to run exactly the same binary as on another cluster.
 
 \subsection{Packages for scripting languages}
+\label{sub:Packages_for_scripting_languages}
 Whenever a software package supports the installation of subpackages, as is the case with the Python, R, or Perl
 scripting languages, we leverage the existing package manager of that language, rather than installing subpackages as
 modules. In the case of Python, we are building Python wheels \cite{Wheels} against our software stack. Wheels are
@@ -279,18 +291,20 @@ performance.
 
 
 \subsection{Licensed software packages}
+\label{sub:Licensed_software_packages}
 Compute Canada also has agreements with a number of software vendors or developers of software packages that require a
 license. In these cases, we install the package using the same tools, but it is installed on a separate CVMFS
 repository which is only accessible to Compute Canada clusters.
 
 \section{Other benefits}
+\label{sec:Other_benefits}
 Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any
 virtual machine on a cloud. For example, for training events, we have been using it to provision small sized replicas
 of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this
 portable software environment to expose a cluster environment directly through a browser, via JupyterHub.
 
 \section{Acknowledgments}
-
+\label{sec:Acknowledgments}
 We thank the following organizations and individuals for sharing their time and expertise:
 \begin{itemize}
 	\item All of the Compute Canada team members who make it possible to manage such a large software stack
