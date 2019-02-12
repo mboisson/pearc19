@@ -148,85 +148,31 @@ software environment to the users, providing over 600 different scientific appli
 
 \section{Introduction}
 \label{sec:Introduction}
-In 2017, Compute Canada set out to refresh its advanced computing infrastructure by deploying a few large clusters to
-replace nearly 30 smaller legacy clusters. This was a good opportunity to rethink our approach to software
-installation. Up to this point, each of the legacy clusters required individual manual software installation. This was
-laborious because each software package had to be installed tens of times, and it created a poor experience for users
-when moving between clusters, due to slight inconsistencies in software installations. When we set out to build a
-common software environment to be used on all new clusters, we first established four guiding principles for our design
-choices.
+In 2016, Compute Canada set out to refresh its advanced computing infrastructure by deploying a few large clusters to replace nearly 30 smaller legacy clusters. This was a good opportunity to rethink our approach to software installation. Up to this point, each of the legacy clusters required individual manual software installation. This was laborious because each software package had to be installed tens of times, and it created a poor experience for users when moving between clusters, due to inconsistencies in software installations. When we set out to build a common software environment, we first established four guiding principles for our design choices.
 
-The first principle is that software packages should be available on every cluster (unless not permitted because of
-license or hardware reasons). This means that we need a scalable resilient multi-site distribution mechanism. There are
-a few solutions that could be used, and we will discuss them in Section~\ref{sec:Distribution_mechanism}. The solution
-we opted for is Cern Virtual Machine File System, or CVMFS\cite{CVMFS}.
+The first principle is that software packages should be available on every cluster (unless not permitted because of license or hardware reasons). This means that we need a scalable resilient multi-site distribution mechanism. There are a few solutions that could be used, and we will discuss them in Section~\ref{sec:Distribution_mechanism}. The solution we opted for is Cern Virtual Machine File System, or CVMFS\cite{CVMFS}.
 
-The second principle is that the software environment should be decoupled from the underlying operating system. When we
-first designed the solution, new clusters were being deployed with the CentOS 7 operating system. However, there was
-interest to support some clusters running CentOS 6. Moreover, not every CentOS 7 system has the same set of system
-packages installed. Finally, Compute Canada also operates several OpenStack clouds, on which users can launch virtual
-machines running any Linux distribution. In order to use the unified software environment on virtual machines and
-multiple clusters, we needed a compatibility layer. The solution we initially deployed is Nix \cite{Nix}, although we
-are experimenting with Gentoo Prefix \cite{Gentoo} as a replacement because of issues we encountered with Nix. We will
-discuss these options in Section~\ref{sec:Compatibility_layer}.
+The second principle is that the software environment should be decoupled from the underlying operating system. When we first designed the solution, new clusters were being deployed with the CentOS 7 operating system. However, they did not all have the same set of system packages installed. Moreover, we were interested in supporting legacy clusters that were running CentOS 6, and virtual machines launched by users on one of several Compute Canada cloud platforms. In order to use the unified software environment on virtual machines and multiple clusters, we needed a compatibility layer. The solution we deployed is Nix \cite{Nix}, although we are experimenting with Gentoo Prefix \cite{Gentoo} as a replacement. We will discuss these options in Section~\ref{sec:Compatibility_layer}.
 
-The third principle is that installation procedures should be tracked and reproducible. This means that automation is
-needed. The solution identified for the compatibility layer already addresses this issue. However, these solutions
-mostly target basic Linux packages. For scientific packages, we also wanted to ensure that the software packages were
-optimized for specific hardware architectures. Two tools with a large set of existing recipes were known to us at the
-time: Spack\cite{Spack} and EasyBuild \cite{EasyBuild2012,EasyBuild2014,EasyBuild2016}.
+The third principle is that installation procedures should be tracked and reproducible. This means that automation is needed. The solution identified for the compatibility layer already addresses this issue. However, these solutions mostly target basic Linux packages. For scientific packages, we also wanted to ensure that the software packages were optimized for specific hardware architectures. Two tools with a large set of existing recipes were known to us at the time: Spack\cite{Spack} and EasyBuild \cite{EasyBuild2012,EasyBuild2014,EasyBuild2016}. We will discuss why we chose EasyBuild in Section~\ref{sub:Compiled_software_packages}.
 
-The fourth principle is that the interface presented to users should be as familiar as possible, and remain manageable
-with a very large number of software packages installed. All of our clusters were using a system of environment modules
-\cite{Modules1991,Modules1996}. However, the traditional systems of modules become unwieldy to handle at the scale of
-thousands of installed modules. Using a hierarchical module tree, which is possible in a newer implementation of
-environment modules called Lmod \cite{Lmod}, helps address this problem. We will discuss how our implementation meets
-the third and fourth principles in Section~\ref{sec:Scientific_applications}.
-
+The fourth principle is that the interface presented to users should be as familiar as possible, and remain manageable with a very large number of software packages installed. All of our clusters were using a system of environment modules \cite{Modules1991,Modules1996}. However, the traditional systems of modules become unwieldy to handle at the scale of thousands of installed modules. Using a hierarchical module tree, which is possible in a newer implementation of environment modules called Lmod \cite{Lmod}, helps address this problem. We will discuss how our implementation meets the third and fourth principles in Section~\ref{sec:Scientific_applications}.
 
 \section{Distribution mechanism}
 \label{sec:Distribution_mechanism}
-Installing software packages on a single cluster can be done through a shared file system, such as NFS, Lustre, or
-GPFS. Anyone who has been working in the field of high performance computing for a number of years knows that parallel
-file systems are often a bottleneck, especially for the IO pattern caused by the action of launching applications. In
-addition to that problem, this solution is also a single point of failure, since any failure of that shared file system
-will block the vast majority of jobs. Another solution for a single cluster is to install binary packages on each node,
-using a mechanism such as RPM. This solution can however lead to diverging configurations on different nodes, and
-require an additional layer to keep the configurations synchronized. 
+Installing software packages on a single cluster can be done through a shared file system, such as NFS, Lustre, or GPFS. Anyone who has been working in the field of high performance computing for a number of years knows that parallel file systems are often a bottleneck, especially for the IO pattern caused by the action of launching applications. In addition to that problem, this solution is also a single point of failure, since any failure of that shared file system will block the vast majority of jobs. Another solution for a single cluster is to install binary packages on each node, using a mechanism such as RPM. This solution can however lead to diverging configurations on different nodes, and require an additional layer to keep the configurations synchronized. 
 
-Adding multiple clusters to the problem poses a second synchronization problem. To keep clusters synchronized, there
-are two strategies. The first one is to push changes from a central repository to the clusters. This can be done with a
-tool such as rsync. This however assumes that the target clusters are online whenever a change needs to be propagated,
-which is whenever a software package is installed or updated. The second solution is for the clusters to pull changes
-from the central repository on a schedule. This too could be implemented with rsync, but for a large software stack, it
-can take a few hours. It also has no way to know whether a change is needed for the users on that cluster.
+Adding multiple clusters to the problem poses a second synchronization problem. To keep clusters synchronized, there are two strategies : pushing changes to the clusters, or pulling changes from a central location. Both strategies could be implemented with a tool such as {\it rsync}. However, synchronizing directories with over 40 million files and  directories takes a few hours, even with a tool as efficient as {\it rsync}. 
 
-CERN Virtual Machine File System (CVMFS) \cite{CVMFS} addresses the above issues. It is a file system initially
-designed to distribute software packages to an array of clusters geographically distribute around the world. It is a
-resilient file system with no single point of failure, and it delivers files to the clients in a pull fashion : each
-client pulls the files it needs when it needs them. Multiple node-wise, cluster-wise and global cache layers ensure
-that pulling files is efficient.
+We instead chose to use CERN Virtual Machine File System (CVMFS) \cite{CVMFS}. CVMFS is a file system initially designed to distribute software packages to an array of clusters geographically distributed around the world. It is a resilient file system with no single point of failure, and it delivers files to the clients in a pull fashion: each client pulls file from it as needed. Multiple cache layers, at the level of each node and each cluster, keep network traffic to the central repository to a minimum.
 
 \subsection{CVMFS structure}
 \label{sub:CVMFS_structure}
-CVMFS is designed similarly to the Network Time Protocol stratum model. There is one source of truth, which is called
-the stratum 0. This is the injection point for new software packages that are to be deployed on the cluster. This
-server is never accessed directly by the end users or the clusters. This means that if it has a failure, the only
-consequence is that one can not inject new files until the server is back.
+CVMFS is designed similarly to the Network Time Protocol stratum model. There is one source of truth called the stratum 0, where any injection of new software is done.  The stratum 0 is never accessed directly by users or even by the clusters. If it fails, the only immediate consequence is that injection of new files is not possible until it is back online.
 
-The repository hosted by the stratum 0 is versioned. This means that it is possible to go back to a previous version,
-should the need arise. Each file and folder hosted in that repository is hashed. This allows for deduplication of
-contents and significant space saving, since multiple copies of the same file will only use as much space as one file.
-Files are also compressed for further space saving. The hash mechanism also allows CVMFS clients to check quickly for
-the validity of their content, and to invalidate their cache when it is outdated.
+Snapshots of the stratum 0 are kept for a while, such that it is possible to go back to a previous version if needed. Files in the repository are compressed, and their hash is computed to allow space saving by avoiding duplication. Hashesalso allows CVMFS clients to quickly invalidate their local cache as needed.
 
-The complete content of the stratum 0 is replicated onto a set of multiple strata 1 servers. They provide redundancy
-and ensure that there is no single point of failure. These are the clusters’ access point to the software stack. Files
-are accessed through the HTTP protocol, which means that clusters can also configure a set of squid servers to ensure a
-cluster-specific local cache, which protects against a failure of the WAN connection. Finally, if the compute nodes
-have a local disk, they host a partial cache, to keep most recently used files local. Alternatively, a cache can be
-setup on a shared file system if compute nodes do not have local disks. This can however become a bottleneck and is a
-single point of failure.
+The stratum 0 is replicated to multiple strata 1 servers that are the access points of the clusters to the software environment. They provide redundancy and avoid single points of failure. Files are served to the clusters through HTTP and can be cached locally with multiple proxy servers, protecting against an outage of the wide area network. The closest layer of cache can be configured either to use a local disk on the compute nodes, or on a shared file system on in a diskless environment.
 
 \section{Compatibility layer}
 \label{sec:Compatibility_layer}
