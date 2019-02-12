@@ -147,6 +147,7 @@ software environment to the users, providing over 600 different scientific appli
 \maketitle
 
 \section{Introduction}
+\label{sec:Introduction}
 In 2017, Compute Canada set out to refresh its advanced computing infrastructure by deploying a few large clusters to
 replace nearly 30 smaller legacy clusters. This was a good opportunity to rethink our approach to software
 installation. Up to this point, each of the legacy clusters required individual manual software installation. This was
@@ -245,6 +246,7 @@ using Nix as a compatibility layer, but we are investigating a switch to Gentoo 
 
 \subsection{Gentoo Prefix}
 \label{sub:Gentoo_Prefix}
+Gentoo Prefix \cite{Gentoo} is an alternative solution to provide a compatibility layer. It allows to install in a non-default location most packages that make a typical Linux operating system. Contrary to Nix however, it installs packages in a structure that is much more similar to a standard Linux distribution. This is helpful when we need to update packages, and it minimizes problems when an application encounters a dependency that is not installed in a traditional structure. At the time of this writing, we are still experimenting with Gentoo Prefix, and it is not used in production. 
 
 \section{Scientific applications}
 \label{sec:Scientific_applications}
