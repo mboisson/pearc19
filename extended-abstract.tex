@@ -176,80 +176,42 @@ The stratum 0 is replicated to multiple strata 1 servers that are the access poi
 
 \section{Compatibility layer}
 \label{sec:Compatibility_layer}
-In order to detach the software stack from the underlying operating system, we need a layer that allows to build almost
-everything, down to the C library. The only exclusions that we do not include are the Linux kernel, kernel modules,
-drivers, and anything that is to be run as a privileged user.
+Isolating the software environment from the operating system requires a compatibility layer containing almost everything that an OS would contain. From this layer, we exclude the Linux kernel and its modules, hardware drivers as well as privileged binaries.
 
 \subsection{Nix}
 \label{sub:Nix}
-Nix \cite{Nix} is both a package manager and an operating system (NixOS). Its core principle is reproducibility.
-Therefore, the recipes attempt very hard and mostly succeed to not depend on the underlying operating system at all.
-Every software built with Nix is installed inside a folder named by the hash of its recipe and that of its
-dependencies. This ensures very strong reproducibility, but it also means that updating a package in place is virtually
-impossible. While reproducibility is a major consideration in advanced computing, we sometimes need to fix bugs or
-security issues, which is made very hard by the design choices in Nix. At the time of writing this paper, we are still
-using Nix as a compatibility layer, but we are investigating a switch to Gentoo Prefix described next.
+Nix \cite{Nix} is both a package manager and an operating system (NixOS). Reproducibility being one the core principles in Nix, it is designed to depend as little as possible on the underlying operating system. Every software package installed through nix resides in a path calculated with the hash of the recipe to build it. This ensures very strong reproducibility, but it also makes updating a package in place impossible. While reproducibility is an important consideration in advanced research computing, bugs sometimes need to be fixed, which is difficult due to Nix' design. At the time of writing this paper, we are still using Nix as a compatibility layer, but we are investigating a switch to Gentoo Prefix described next.
 
 \subsection{Gentoo Prefix}
 \label{sub:Gentoo_Prefix}
-Gentoo Prefix \cite{Gentoo} is an alternative solution to provide a compatibility layer. It allows to install in a non-default location most packages that make a typical Linux operating system. Contrary to Nix however, it installs packages in a structure that is much more similar to a standard Linux distribution. This is helpful when we need to update packages, and it minimizes problems when an application encounters a dependency that is not installed in a traditional structure. At the time of this writing, we are still experimenting with Gentoo Prefix, and it is not used in production. 
+Gentoo Prefix~\cite{Gentoo} is an alternative solution to provide a compatibility layer. It allows installation of most packages that make a typical Linux inside a non-default location. Contrary to Nix however, packages are installed in a standard directory structure. This is helpful when updates are required, and minimizes problems with applications that expect a standard directory structure. At the time of this writing, we are still experimenting with Gentoo Prefix, and it is not used in production. 
 
 \section{Scientific applications}
 \label{sec:Scientific_applications}
 
 \subsection{Compiled software packages}
 \label{sub:Compiled_software_packages}
-The majority of our software stack is made up of scientific software that are performance critical. This implies that
-they cannot be installed in the compatibility layer described above, because different clusters support different sets
-of CPU instructions. To install these packages, we use a package manager called EasyBuild
-\cite{EasyBuild2012,EasyBuild2014,EasyBuild2016}.
+Scientific applications constitute the majority of our software stack. Since their performance is critical, they can not be installed in the compatibility layer, as they need to be optimized for specific CPU instructions. To install them, we use the EasyBuild~\cite{EasyBuild2012,EasyBuild2014,EasyBuild2016} package manager.
 
-EasyBuild initially originated from University of Ghent, but has now over 200 contributors from all around the world.
-The framework is based on scripted recipes to install packages, usually from source code. It is designed to produce
-optimized binaries, and allows to easily recompile different versions of a given software using different toolchains,
-where a toolchain is composed of a compiler, an implementation of MPI, mathematical libraries and CUDA.
+EasyBuild originated from University of Ghent, but has now over 200 contributors from all around the world. The framework is based on scripted recipes to install packages, usually from source code. It is designed to create optimized binaries, and eases recompilation of multiple versions of a given application using many combinations of compilers or libraries.
 
-EasyBuild also automatically creates module files. Out of the box, EasyBuild supports flat naming schemes as well as
-hierarchical naming schemes. We have customized our own module naming scheme based on the hierarchical naming scheme.
-Hierarchical module trees offer the advantage of hiding modules that are incompatible with toolchains that are
-currently loaded. This can however throw off some users, since they don’t automatically see all available modules. Lmod
-\cite{Lmod} alleviates this issue by providing a command to crawl the full module tree and instructs users on how to
-load specific modules that might be available only with specific toolchains.
-
+EasyBuild also automatically creates module files~\cite{Modules1991,Modules1996,Lmod}. The framework supports multiple standard and custom naming schemes. We use a version of a hierarchical naming scheme, in which modules are organized in a tree structure, hiding those that are incompatible currently loaded modules. This limits the list of modules which could otherwise be very long. This can however throw off some users, since they don’t automatically see all available modules. Lmod~\cite{Lmod} alleviates this issue by providing a command to crawl the full module tree and instructs users on how to load the module they want.
 
 \subsection{Handling multiple CPU architectures}
 \label{sub:Handling_multiple_CPU_architectures}
-In order to handle multiple CPU architectures, we have configured EasyBuild to install software packages in a different
-directory and module tree based on the architecture requested. There is also a wide selection of software packages that
-are installed in an architecture-independent fashion. This is the case, for example, for binary packages, packages that
-are not performance critical, or packages that consists of source files only.
-
-When a software package is built for multiple architectures, the same recipe is used for all of them. While each
-cluster will typically show only a single architecture, users are allowed to select a different architecture if they
-wish to run exactly the same binary as on another cluster.
+Handling multiple CPU architectures is done by installing applications in architecture dependent paths and module trees. We also have a wide selection of software packages that are installed in an architecture-independent fashion. This is the case, for example, for binary packages, packages that are not performance critical, or packages that consists of source files only. The same recipe is typically used for installing the same package for multiple architectures. While each cluster will usually show only a single architecture, users are allowed to select a different architecture if they wish to run exactly the same binary as on another cluster.
 
 \subsection{Packages for scripting languages}
 \label{sub:Packages_for_scripting_languages}
-Whenever a software package supports the installation of subpackages, as is the case with the Python, R, or Perl
-scripting languages, we leverage the existing package manager of that language, rather than installing subpackages as
-modules. In the case of Python, we are building Python wheels \cite{Wheels} against our software stack. Wheels are
-binary packages that can be installed in a matter of seconds, similar to CentOS RPM packages. Since they are built by
-our team, and linked against our optimize software stack, we ensure that they are both easy to installed and offer good
-performance.
+For scripting languages that support installing packages, such as Python, R or Perl, we leverage the existing package manager of that language, rather than installing them as modules. In the case of Python, we are building Python wheels~\cite{Wheels}, linking against our software stack. Wheels are binary packages that can be installed in a matter of seconds, similar to CentOS RPM packages. Since they are built by our team, and linked against our optimize software stack, we ensure that they are both easy to installed and offer good performance.
 
-
-\subsection{Licensed software packages}
+\subsection{Licensed and restricted software packages}
 \label{sub:Licensed_software_packages}
-Compute Canada also has agreements with a number of software vendors or developers of software packages that require a
-license. In these cases, we install the package using the same tools, but it is installed on a separate CVMFS
-repository which is only accessible to Compute Canada clusters.
+Compute Canada also has agreements with a number of software vendors or developers of applications that require a license. In these cases, we install the package using the same tools, but it is deployed on a separate CVMFS repository which is only accessible to Compute Canada clusters.
 
 \section{Other benefits}
 \label{sec:Other_benefits}
-Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any
-virtual machine on a cloud. For example, for training events, we have been using it to provision small sized replicas
-of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this
-portable software environment to expose a cluster environment directly through a browser, via JupyterHub.
+Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any virtual machine on a cloud. For example, for training events, we have been using it to provision small sized replicas of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this portable software environment to expose a cluster environment directly through a browser, via JupyterHub. It can also help support infrastructures owned by various institutions.
 
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
