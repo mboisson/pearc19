@@ -47,7 +47,7 @@
 
 %
 % The "title" command has an optional parameter, allowing the author to define a "short title" to be used in page headers.
-\title{Providing A Unified Software Environment for Canada’s National Advanced Computing Centers}
+\title{Providing a Unified Software Environment for Canada’s National Advanced Computing Centers}
 
 %
 % The "author" command and its associated commands are used to define the authors and their affiliations.
@@ -98,7 +98,7 @@ Exploiting an advanced computing platform consisting of several clusters distrib
 
 We had to find software solutions to solve the challenges involved to achieve this goal. Distribution, portability and performance were three important technical criteria for us. We also had to consider the practicality of each approach for our users, and reproducibility of software installations performed by staff located at various sites across Canada. 
 
-In this paper, we present the solution that we created, which has allowed Compute Canada to serve the needs of over 10,000 researchers across the country. It is used on over 20 different clusters with heterogeneous configurations, from processor architectures as old as Intel Nehalem or AMD Opteron all the way up to Intel Skylake, with and without GPUs, with InfiniBand, Ethernet or OmniPath as the network fabric, and with Slurm or Torque/Moab as the scheduler. It presents a unified software environment to the users, providing over 600 different scientific applications that are available in over 4,000 different combinations of version, compiler and CPU architecture.
+In this paper, we present the solution that we created, which has allowed Compute Canada to serve the needs of over 10,000 researchers across the country. This solution is used on over 20 different clusters with heterogeneous configurations, on processor architectures ranging from AMD's 2010 Magny-Cours to Intel's 2017 Skylake SP, with or without GPUs, with InfiniBand, Ethernet or OmniPath as the network fabric, and with Slurm or Torque/Moab as the scheduler. This stack provides a unified software environment to users, providing over 600 different scientific applications that are available in over 4,000 different combinations of version, compiler and CPU architecture.
 \end{abstract}
 
 %
@@ -142,13 +142,13 @@ The second principle is that the software environment should be decoupled from t
 that were running CentOS 6, and virtual machines launched by users on one of several Compute Canada cloud platforms. In order to use the unified software environment on all of these systems, we needed a compatibility layer. 
 The solution we deployed is Nix \cite{Nix}, although we are experimenting with Gentoo Prefix \cite{Gentoo} as a replacement. We will discuss these options in Section~\ref{sec:Compatibility_layer}.
 
-The third principle is that installation procedures should be tracked and reproducible. This means that automation is needed. Nix already addresses this issue; however it mostly targets basic Linux packages. For scientific packages, we also wanted to ensure that the software packages were optimized for specific hardware architectures, which Nix does not. The tool we chose for this task is EasyBuild~\cite{EasyBuild2012,EasyBuild2014,EasyBuild2016}, which we will discuss in Section~\ref{sub:Compiled_software_packages}.
+The third principle is that installation procedures should be tracked and reproducible. This means that automation is needed. Nix already addresses this issue; however it mostly targets basic Linux packages. For scientific packages, we also wanted to ensure that the software packages were optimized for specific hardware architectures, which Nix can not easily do. The tool we chose for this task is EasyBuild~\cite{EasyBuild2012,EasyBuild2014,EasyBuild2016}, which we will discuss in Section~\ref{sub:Compiled_software_packages}.
 
 The fourth principle is that the interface presented to users should be as familiar as possible, and remain manageable with a very large number of software packages installed. All of our clusters were using a system of environment modules \cite{Modules1991,Modules1996}. However, the traditional module systems become unwieldy to handle at the scale of thousands of installed modules. Using a hierarchical module tree, which is possible in a newer implementation of environment modules called Lmod \cite{Lmod}, helps address this problem. We will discuss how our implementation meets the third and fourth principles in Section~\ref{sec:Scientific_applications}.
 
 \section{Distribution mechanism}
 \label{sec:Distribution_mechanism}
-A shared file system such as NFS, Lustre, or GPFS, can provide access to software packages on a single cluster. However, experience in the field of high performance computing shows that parallel file systems are often challenging to operate at scale in a reliable and performant manner, especially for the high I/O operations per seconds caused by applications startup. In addition, a shared file system is a single point of failure for a cluster, which nearly all jobs rely on in order to run. An alternative for a single cluster is to install binary packages on each node, using a mechanism such as RPM. However, this can result in divergent configurations across nodes, may be restricted by available space on the local disk, and requires an additional configuration management layer to keep the packages synchronized. 
+A shared file system such as NFS, Lustre, or GPFS, can provide access to software packages on a single cluster. However, experience in the field of high performance computing shows that parallel file systems are often challenging to operate at scale in a reliable and performant manner, especially for the high I/O operations per second caused by applications startup. In addition, a shared file system is a single point of failure for a cluster, which nearly all jobs rely on in order to run. An alternative for a single cluster is to install binary packages on each node, using a mechanism such as RPM. However, this can result in divergent configurations across nodes, may be limited by available space on the local disk, and requires an additional configuration management layer to keep the packages synchronized. 
 
 For a national platform spanning multiple clusters, latency precludes a parallel file system from consideration, and the synchronization problem is compounded. The clusters could be synchronized by pulling or pushing changes with a tool such as {\it rsync}, but this would not be scalable; even a tool as efficient as {\it rsync} takes several hours to synchronize over 40 million files and directories. Moreover, this method of copying files is not transactional or atomic, so an additional indirection layer would be required to provide a complete solution.
 
@@ -158,22 +158,22 @@ We therefore chose to use CERN Virtual Machine File System (CVMFS) \cite{CVMFS}.
 \label{sub:CVMFS_structure}
 CVMFS is designed similarly to the Network Time Protocol stratum model. There is one source of truth called the stratum 0, where software is injected.  The stratum 0 is never accessed directly by clients. If it fails, the only immediate consequence is that injection of new files is not possible until it is back online.
 
-Snapshots of the stratum 0 are kept for a while, such that it is possible to roll back to a previous version if needed. Files in the repository are compressed, and their hash is computed to allow space saving by deduplicating objects. Hashes also allow CVMFS clients to verify and invalidate their local cache quickly when contents is changed.
+Snapshots of the stratum 0 are kept for a while, such that it is possible to roll back to a previous version if needed. Files in the repository are compressed, and their hash is computed to save space by deduplicating objects. Hashes also allow CVMFS clients to quickly verify and invalidate their local caches when content is changed.
 
-The stratum 0 is replicated to multiple strata 1 servers that are the access points of the clusters to the software environment. They provide redundancy and prevent single points of failure. Files are served to the clusters through HTTP and can be cached locally with multiple proxy servers, protecting against an outage of the wide area network. The closest layer of cache can be configured either to use a local disk on the compute nodes, or on a shared file system on in a diskless environment.
+The stratum 0 is replicated to multiple strata 1 servers, which serve content to clients and provide redundancy and load balancing. Files are served to the clusters via HTTP, and each cluster has local caching proxy servers to reduce the load placed on the stratum 1 servers by its worker nodes mitigating the impact of a wide area network outage. The closest layer of cache can be configured to use a local disk on the compute nodes, or a shared file system in a diskless environment.
 
 
 \section{Compatibility layer}
 \label{sec:Compatibility_layer}
-Isolating the software environment from the operating system requires a compatibility layer containing almost everything that an OS would contain. From this layer, we exclude the Linux kernel and its modules, hardware drivers, as well as privileged binaries.
+Isolating the software environment from the operating system requires a compatibility layer containing almost everything that an OS would provide. From this layer, we exclude the Linux kernel and its modules, hardware drivers, and privileged binaries.
 
 \subsection{Nix}
 \label{sub:Nix}
-Nix \cite{Nix} is both a package manager and an operating system (NixOS). Reproducibility being one the core principles in Nix, it is designed to depend as little as possible on the underlying operating system. Every software package installed through Nix resides in a path calculated with the hash of the recipe to build it. This ensures very strong reproducibility, but it also makes updating a package in place impossible. While reproducibility is an important consideration in advanced research computing, bugs sometimes need to be fixed, which is difficult due to Nix' design. At the time of writing this paper, we are still using Nix as a compatibility layer, but we are investigating a switch to Gentoo Prefix described next.
+Nix \cite{Nix} is both a package manager and an operating system (NixOS). One of the core principles in Nix is reproducibility, so it is designed to depend as little as possible on the underlying operating system. Every software package installed through Nix resides in a path calculated with the hash of the recipe to build it. This ensures very strong reproducibility, but it also makes updating a package in place impossible. While reproducibility is an important consideration in advanced research computing, bugs sometimes need to be fixed, which is difficult due to Nix' design. This difficulty arises in particular because our Nix-installed packages are linked into software that is not installed via Nix. At the time of writing this paper, we are still using Nix as a compatibility layer, but we are investigating a switch to Gentoo Prefix.
 
 \subsection{Gentoo Prefix}
 \label{sub:Gentoo_Prefix}
-Gentoo Prefix~\cite{Gentoo} is an alternative solution to provide a compatibility layer. It allows installation of most packages that form a typical Linux inside a non-default location. Contrary to Nix however, packages are installed in a standard directory structure. This is helpful when updates are required, and minimizes problems with applications that expect a standard directory structure. At the time of this writing, we are still experimenting with Gentoo Prefix, and it is not used in production. 
+Gentoo Prefix~\cite{Gentoo} is an alternative solution to provide a compatibility layer. It allows installation of most packages that form a typical Linux operating system in a non-default location. Contrary to Nix however, packages are installed in a standard directory structure. This is helpful when updates are required, and minimizes problems with applications that expect a standard directory structure. At the time of this writing, we are still experimenting with Gentoo Prefix, and it is not used in production. 
 
 \section{Scientific applications}
 \label{sec:Scientific_applications}
@@ -182,17 +182,17 @@ Gentoo Prefix~\cite{Gentoo} is an alternative solution to provide a compatibilit
 \label{sub:Compiled_software_packages}
 Scientific applications constitute the majority of our software stack. Since their performance is critical, they can not be installed in the compatibility layer, as they need to be optimized for specific CPU instructions. To install them, we use the EasyBuild~\cite{EasyBuild2012,EasyBuild2014,EasyBuild2016} software installation tool.
 
-EasyBuild originated from University of Ghent, but has now over 200 contributors from all around the world. The framework is based on scripted recipes to install packages, usually from source code. It is designed to create optimized binaries, and eases recompilation of multiple versions of a given application using many combinations of compilers or libraries. 
+EasyBuild originated from the University of Ghent, but now has over 200 contributors from around the world. The framework is based on scripted recipes to install packages, usually from source code. It is designed to create optimized binaries, and eases recompilation of multiple versions of a given application using many combinations of compilers or libraries. 
 
 EasyBuild also automatically creates module files~\cite{Modules1991,Modules1996,Lmod}. The framework supports multiple standard and custom naming schemes. We use a version of a hierarchical naming scheme, in which modules are organized in a tree structure, hiding those that are incompatible with currently loaded modules. This limits the list of visible modules which could otherwise be very extensive. This can however throw off some users, since they don’t automatically see all available modules. Lmod~\cite{Lmod} alleviates this issue by providing a separate command to crawl the full module tree and instructs users on how to load the module they want.
 
 \subsection{Handling multiple CPU architectures}
 \label{sub:Handling_multiple_CPU_architectures}
-Handling multiple CPU architectures is done by installing applications in architecture dependent paths and module trees. We also have a wide selection of software packages that are installed in an architecture-independent fashion. This is the case, for example, for binary packages, packages that are not performance critical, or packages that consists of source files only. The same recipe is typically used for installing the same package for multiple architectures. While each cluster will usually show only a single architecture, users are allowed to select a different architecture if they wish to run exactly the same binary as on another cluster.
+Handling multiple CPU architectures is done by installing applications in architecture-dependent paths and module trees. We also have a wide selection of software packages that are installed in an architecture-independent fashion. This is the case, for example, for binary packages, packages that are not performance critical, or packages that consist of source files only. The same recipe is typically used for installing the same package for multiple architectures. While each cluster will usually show only a single architecture, users are allowed to select a different architecture if they wish to run exactly the same binary as on another cluster.
 
 \subsection{Packages for scripting languages}
 \label{sub:Packages_for_scripting_languages}
-For scripting languages that support installing packages, such as Python, R or Perl, we leverage the existing package manager of that language, rather than installing them as modules. In the case of Python, we are building Python wheels~\cite{Wheels}, linking against our software stack. Wheels are binary packages that can be installed in a matter of seconds, similar to CentOS RPM packages. Since they are built by our team, and linked against our optimize software stack, we ensure that they are both easy to installed and offer good performance.
+For scripting languages that support installing packages, such as Python, R or Perl, we leverage the existing package manager of that language, rather than installing them as modules. In the case of Python, we are building Python wheels~\cite{Wheels}, linking against our software stack. Wheels are binary packages that can be installed in a matter of seconds, similar to CentOS RPM packages. Since they are built by our team, and linked against our optimized software stack, we ensure that they are easy to install and offer good performance.
 
 \subsection{Licensed and restricted software packages}
 \label{sub:Licensed_software_packages}
@@ -200,7 +200,7 @@ Compute Canada also has agreements with a number of software vendors or develope
 
 \section{Other benefits}
 \label{sec:Other_benefits}
-Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any virtual machine on a cloud. For example, for training events, we have been using it to provision small sized replicas of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this portable software environment to expose a cluster environment directly through a browser, via JupyterHub. It can also help support infrastructures owned by various institutions.
+Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any virtual machine on a cloud. For example, for training events, we have been using it to provision small replicas of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this portable software environment to expose a cluster environment directly through a browser, via JupyterHub. It can also help support infrastructures owned by various institutions.
 
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
@@ -212,8 +212,7 @@ debugging for Lmod
 	\item Kenneth Hoste from Ghent University, and Åke Sandgren from Umeå University, for many discussions
 regarding EasyBuild
     \item All of the EasyBuild maintainers and contributors, without which EasyBuild would not have nearly as many supported recipes.
-	\item Kuang Chung Chen and Bryan Caron, from McGill University, for initiating the groundwork that lead to this
-project
+	\item Kuang Chung Chen and Bryan Caron, from McGill University, for initiating the groundwork in Compute Canada that lead to this project
 	\item Dave Dykstra, Jakob Blomer, and the CernVM project team for support and development of CVMFS
 \end{itemize}
 
