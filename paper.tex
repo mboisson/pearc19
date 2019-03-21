@@ -254,9 +254,41 @@ For scripting languages that support installing packages, such as Python, R or P
 \label{sub:Licensed_software_packages}
 Compute Canada also has agreements with a number of software vendors or developers of applications that require a license. In these cases, we install the package using the same tools, but it is deployed on a separate CVMFS repository which is only accessible to Compute Canada clusters.
 
-\section{Other benefits}
-\label{sec:Other_benefits}
+\subsection{Documentation of supported packages}
+\label{sub:Documentation}
+Every software package that is installed through EasyBuild get automatically listed on our documentation website, at \\
+\url{https://docs.computecanada.ca/wiki/Available_software}
+A similar list of available Python wheels is automatically generated at \\
+\url{https://docs.computecanada.ca/wiki/Available_wheels}
+
+
+\subsection{Logging of module usage}
+\label{sub:Logging}
+Our module system will automatically log (through {\it logger}) each module that is loaded. The information is logged in an easily parsable list of key-value pairs, which can then be aggregated into your favorite monitoring tool such as Elastic Search. 
+
+\section{Making the software environment available on your cluster or computer}
+\label{sec:Making_it_available}
+Making our software environment available on a single computer is as simple as installing the CVMFS client and configuring repositories manually or installing our RPM
+\textbf{TODO: Document our RPM}
+
+After CVMFS is configured, one can simply execute the command below in order to obtain Compute Canada's software environment \\
+\texttt{source /cvmfs/soft.computecanada.ca/config/profile/bash} \\
+
+By default, our default set of modules will try to detect the most recent set of instructions that is supported by the CPU amongst {\it SSE3}, {\it AVX}, {\it AVX2} and {\it AVX512}. It will also try to detect whether the hardware has a {\it Mellanox InfiniBand}, {\it Intel OmniPath}, or an Ethernet network fabric. If these are not detected correctly, or if you have a cluster made up of mixed hardware, you can overwrite these defaults by defining the {\verb!RSNT_ARCH!} or {\verb!RSNT_INTERCONNECT!} environment variables before executing the command above. 
+
+Note that the first time a command is ran, it will take some longer time to start the command, as the CVMFS client is fetching the files that are needed to run the command from our stratum 1 servers. Following executions of the same command will however be fast as files will have been cached locally. 
+
+Also note that the command above will \textbf{not} import our environment for any user ID lower than 1000, which are typically privileged users on a Linux system. In order to force the command above to execute nevertheless, you can create a file named \verb!.force_cc_cvmfs! in the user's \verb!$HOME! directory. 
+
+Making our software environment available on a cluster requires the additional step of configuring one or multiple HTTP proxies. This is required to avoid overloading the stratum-1 server by having a large number of nodes all fetching the same files at the same time. If you are interested in testing or making our software environment available to your users on your cluster, we ask that you first contact us. Note that this software stack comes with absolutely no warranty. 
+
+\section{Other benefits and conclusion}
+\label{sec:Conclusion}
+We have built a software environment that is portable, is optimized for multiple CPU architectures and network interconnect, and can be deployed in a matter of minutes on a single node, and barely longer for a whole cluster. The design of the infrastructure guarantees that the software environment seen by our end users is the same across all of our clusters, and will not diverge over time. This makes for a better user experience, as it becomes much easier to migrate between two clusters. It also reduces the workload on our staff by unifying the installation process for all clusters, and makes supporting our users easier because all clusters work the same way.
+
 Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any virtual machine on a cloud. For example, for training events, we have been using it to provision small replicas of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this portable software environment to expose a cluster environment directly through a browser, via JupyterHub. It can also help support infrastructures owned by various institutions.
+
+
 
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
