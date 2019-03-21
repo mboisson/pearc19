@@ -29,6 +29,7 @@
 %\acmYear{2018}\acmVolume{37}\acmNumber{4}\acmArticle{111}\acmMonth{8}
 %\acmDOI{10.1145/1122445.1122456}
 
+
 %
 % Submission ID.
 % Use this when submitting an article to a sponsored event. You'll receive a unique submission ID from the organizers
@@ -154,6 +155,8 @@ For a national platform spanning multiple clusters, latency precludes a parallel
 
 We therefore chose to use CERN Virtual Machine File System (CVMFS) \cite{CVMFS}. CVMFS is a file system designed to distribute software packages to clusters at a global scale with no single point of failure. Clients access files by pulling content on demand, using multiple levels of caching, to minimize network traffic and storage use and ensure responsive and scalable performance.
 
+We will describe the generic structure of a CVMFS deployment in Section~\ref{sub:CVMFS_structure}, and describe the deployment specific to Compute Canada in Section~\ref{sub:CVMFS_in_CC}
+
 \subsection{CVMFS structure}
 \label{sub:CVMFS_structure}
 CVMFS is designed similarly to the Network Time Protocol stratum model. There is one source of truth called the stratum 0, where software is injected.  The stratum 0 is never accessed directly by clients. If it fails, the only immediate consequence is that injection of new files is not possible until it is back online.
@@ -162,6 +165,17 @@ Snapshots of the stratum 0 are kept for a while, making it possible to roll back
 
 The stratum 0 is replicated to multiple strata 1 servers, which serve content to clients and provide redundancy and load balancing. Files are served to the clusters via HTTP, and each cluster has local caching proxy servers to reduce the load placed on the stratum 1 servers by its worker nodes, and mitigate the impact of a wide area network outage. The closest layer of cache can be configured to use a local disk on the compute nodes, or a shared file system in a diskless environment.
 
+\subsection{Deployment of CVMFS in Compute Canada}
+\label{sub:CVMFS_in_CC}
+For Compute Canada's needs, we have deployed three CVMFS repositories, each composed of a stratum 0 and one or multiple strata 1. 
+
+First, we have a development repository. This repository is used to deploy software from our build infrastructure onto the clusters without exposing it to end users. This allows us test newly installed software packages on our clusters without impacting production. This minimizes the odds of a faulty package being pushed to production. This is especially important when a bug is found in one of the software packages and we need to update it. This also happens for example if we need to make minor changes to an MPI implementation in order to correctly support a new cluster with a different networking fabric. 
+
+We then have a production repository. By design, software packages are always copied onto the production repository from the development repository, and never from the build infrastructure directly. This workflow also minimizes the odds of a faulty software making its way to the end users. This repository holds all of the software environment which is visible to the end users on all of our clusters. Once a piece of software is deployed onto this repository, it becomes visible on all clusters within 30 minutes. 
+
+Both repositories above are available publicly, and can be mounted on any cluster or virtual machine in the cloud. We also have a third repository which is used to host software packages that are restricted to Compute Canada due to license limitations. We work with software vendors and developers in order to get the authorization to install licensed and commercial software packages in this repository. The most common licensing model that we use is a BYOL (bring your own license) model, in which we provide the software package, but end users provide a license server to connect to. Another model that is used is to control access to a software package via POSIX groups. By default, CVMFS clients do not honour POSIX group and filesystem permissions, but they can be configured to do so. Since this kind of restriction requires a specific LDAP and a specific configuration, this repository is restricted and can only be made available to clusters that are run by Compute Canada teams. 
+
+One final use case for CVMFS is to hold and distribute datasets. However, default CVMFS configuration is optimized for a large number of small files, rather than a small number of large files. This means that a special configuration must be done for this repository. At the time of writing this paper, this use case is still experimental within Compute Canada, but other groups are known to use CVMFS in this way.
 
 \section{Compatibility layer}
 \label{sec:Compatibility_layer}
