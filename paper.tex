@@ -159,15 +159,18 @@ We will describe the generic structure of a CVMFS deployment in Section~\ref{sub
 
 \subsection{CVMFS structure}
 \label{sub:CVMFS_structure}
-CVMFS is designed similarly to the Network Time Protocol stratum model. There is one source of truth called the stratum 0, where software is injected.  The stratum 0 is never accessed directly by clients. If it fails, the only immediate consequence is that injection of new files is not possible until it is back online.
+CVMFS is designed similarly to the Network Time Protocol stratum model, as illustrated in Figure~\ref{fig:CVMFS_structure}. There is one source of truth called the stratum 0, where software is injected.  The stratum 0 is never accessed directly by clients. If it fails, the only immediate consequence is that injection of new files is not possible until it is back online. 
 
 Snapshots of the stratum 0 are kept for a while, making it possible to roll back to a previous version if needed. Files in the repository are compressed, and their hash is computed to save space by deduplicating objects. Hashes also allow CVMFS clients to quickly verify and invalidate their local caches when content is changed.
 
 The stratum 0 is replicated to multiple strata 1 servers, which serve content to clients and provide redundancy and load balancing. Files are served to the clusters via HTTP, and each cluster has local caching proxy servers to reduce the load placed on the stratum 1 servers by its worker nodes, and mitigate the impact of a wide area network outage. The closest layer of cache can be configured to use a local disk on the compute nodes, or a shared file system in a diskless environment.
 
+\textbf{TODO: Insert figure representing the CVMFS structure of strata. }
+\label{fig:CVMFS_structure}
+
 \subsection{Deployment of CVMFS in Compute Canada}
 \label{sub:CVMFS_in_CC}
-For Compute Canada's needs, we have deployed three CVMFS repositories, each composed of a stratum 0 and one or multiple strata 1. 
+For Compute Canada's needs, we have deployed three CVMFS repositories, each composed of a stratum 0 and one or multiple strata 1. This allows us to follow a workflow that includes testing before exposing software packages to user, as illustrated in Fig~\ref{fig:Workflow}.
 
 First, we have a development repository. This repository is used to deploy software from our build infrastructure onto the clusters without exposing it to end users. This allows us test newly installed software packages on our clusters without impacting production. This minimizes the odds of a faulty package being pushed to production. This is especially important when a bug is found in one of the software packages and we need to update it. This also happens for example if we need to make minor changes to an MPI implementation in order to correctly support a new cluster with a different networking fabric. 
 
@@ -176,6 +179,22 @@ We then have a production repository. By design, software packages are always co
 Both repositories above are available publicly, and can be mounted on any cluster or virtual machine in the cloud. We also have a third repository which is used to host software packages that are restricted to Compute Canada due to license limitations. We work with software vendors and developers in order to get the authorization to install licensed and commercial software packages in this repository. The most common licensing model that we use is a BYOL (bring your own license) model, in which we provide the software package, but end users provide a license server to connect to. Another model that is used is to control access to a software package via POSIX groups. By default, CVMFS clients do not honour POSIX group and filesystem permissions, but they can be configured to do so. Since this kind of restriction requires a specific LDAP and a specific configuration, this repository is restricted and can only be made available to clusters that are run by Compute Canada teams. 
 
 One final use case for CVMFS is to hold and distribute datasets. However, default CVMFS configuration is optimized for a large number of small files, rather than a small number of large files. This means that a special configuration must be done for this repository. At the time of writing this paper, this use case is still experimental within Compute Canada, but other groups are known to use CVMFS in this way.
+
+\textbf{TODO: INSERT FIGURE representing our workflow (build => test locally => dev => test on cluster => prod) }
+\label{fig:Workflow}
+
+
+\section{A layered approach}
+\label{sec:Layered_environment}
+To install software packages for our common environment, we follow a layered approach, as illustrated in Table~\ref{tab:layers}. First, we require a basic Linux installation. Any version of Linux with a kernel 2.6.32 or more recent should work. This layer is managed by the system administrators, and should contain any driver, such as GPU drivers or drivers for the network fabric, kernel modules, as well as privileged binaries. 
+
+The second layer is what we call our compatibility layer. It contains almost all packages that one would typically install with the Linux distribution's package manager, such as {\it yum} or {\it apt-get}. 
+
+The third layer is the scientific application layer. It contains mostly scientific or performance critical applications, including for example MPI implementations, CUDA, mathematical libraries, and domain specific applications. 
+
+\textbf{TODO: INSERT FIGURE/TABLE WITH OS layer, Nix layer, EasyBuild layer}
+\label{tab:layers}
+
 
 \section{Compatibility layer}
 \label{sec:Compatibility_layer}
