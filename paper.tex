@@ -165,8 +165,12 @@ Snapshots of the stratum 0 are kept for a while, making it possible to roll back
 
 The stratum 0 is replicated to multiple strata 1 servers, which serve content to clients and provide redundancy and load balancing. Files are served to the clusters via HTTP, and each cluster has local caching proxy servers to reduce the load placed on the stratum 1 servers by its worker nodes, and mitigate the impact of a wide area network outage. The closest layer of cache can be configured to use a local disk on the compute nodes, or a shared file system in a diskless environment.
 
-\textbf{TODO: Insert figure representing the CVMFS structure of strata. }
-\label{fig:CVMFS_structure}
+\begin{figure}
+  \includegraphics[width=0.45\textwidth]{CVMFS-structure.pdf}
+  \caption{Diagram of the CVMFS structure. Arrows represent the flow of data. Data is pushed into the stratum-0, but is then fetched by the following layers.}
+  \label{fig:CVMFS_structure}
+\end{figure}
+
 
 \subsection{Deployment of CVMFS in Compute Canada}
 \label{sub:CVMFS_in_CC}
@@ -180,8 +184,12 @@ Both repositories above are available publicly, and can be mounted on any cluste
 
 One final use case for CVMFS is to hold and distribute datasets. However, default CVMFS configuration is optimized for a large number of small files, rather than a small number of large files. This means that a special configuration must be done for this repository. At the time of writing this paper, this use case is still experimental within Compute Canada, but other groups are known to use CVMFS in this way.
 
-\textbf{TODO: INSERT FIGURE representing our workflow (build => test locally => dev => test on cluster => prod) }
-\label{fig:Workflow}
+\begin{figure}
+  \includegraphics[width=0.45\textwidth]{Software-installation-workflow.pdf}
+  \caption{Workflow followed by our software installers. At each step, there is a checkpoint to test if the software package works properly.}
+  \label{fig:Workflow}
+\end{figure}
+
 
 
 \section{A layered approach}
