@@ -200,9 +200,11 @@ The second layer is what we call our compatibility layer. It contains almost all
 
 The third layer is the scientific application layer. It contains mostly scientific or performance critical applications, including for example MPI implementations, CUDA, mathematical libraries, and domain specific applications. 
 
-\textbf{TODO: INSERT FIGURE/TABLE WITH OS layer, Nix layer, EasyBuild layer}
-\label{tab:layers}
-
+\begin{figure*}
+  \includegraphics[width=0.7\textwidth]{layers.png}
+  \caption{Layered structure of our software stack. The bottom layer (red) is entirely managed by the system administrators of each cluster. The second layer (grey) contains libraries that can be installed centrally, through Nix, but can be overridden locally. The third layer (yellow) contains everything that one would typically find in the Linux user space. The fourth layer (green) contains packages that you would typically find in an operating system, but for which multiple versions are required. They are installed through Nix, but wrapped into a module by EasyBuild. The top layer (blue) contains packages that are not typically installed in a Linux distribution, and are installed via EasyBuild.}
+  \label{fig:layers}
+\end{figure*}
 
 \section{Compatibility layer}
 \label{sec:Compatibility_layer}
