@@ -64,7 +64,7 @@
   \country{Canada}
   \postcode{G1V 0A6}
 }
-\author{Bart Oldeman}
+\author{Bart E. Oldeman}
 \email{bart.oldeman@calculquebec.ca}
 \affiliation{%
   \institution{McGill University, Calcul Québec, Compute Canada}
@@ -149,7 +149,7 @@ The fourth principle is that the interface presented to users should be as famil
 
 \section{Distribution mechanism}
 \label{sec:Distribution_mechanism}
-A shared file system such as NFS, Lustre, or GPFS, can provide access to software packages on a single cluster. However, experience in the field of high performance computing shows that parallel file systems are often challenging to operate at scale in a reliable and performant manner, especially for the high I/O operations per second caused by application startups. In addition, a shared file system is a single point of failure for a cluster, which nearly all jobs rely on in order to run. An alternative for a single cluster is to install binary packages on each node, using a mechanism such as RPM. However, this can result in divergent configurations across nodes, may be limited by available space on the local disk, and requires an additional configuration management layer to keep the packages synchronized. 
+A shared file system such as NFS, Lustre, or GPFS can provide access to software packages on a single cluster. However, experience in the field of high performance computing shows that parallel file systems are often challenging to operate at scale in a reliable and performant manner, especially for the high I/O operations per second caused by application startups. In addition, a shared file system is a single point of failure for a cluster, which nearly all jobs rely on in order to run. An alternative for a single cluster is to install binary packages on each node, using a mechanism such as RPM. However, this can result in divergent configurations across nodes, may be limited by available space on the local disk, and requires an additional configuration management layer to keep the packages synchronized. 
 
 For a national platform spanning multiple clusters, latency precludes a parallel file system from consideration, and the synchronization problem is compounded. The clusters could be synchronized by pulling or pushing changes with a tool such as {\it rsync}, but this would not be scalable; even a tool as efficient as {\it rsync} takes several hours to synchronize over 40 million files and directories. Moreover, this method of copying files is not transactional or atomic, so an additional indirection layer would be required to provide a complete solution.
 
@@ -194,16 +194,16 @@ One final use case for CVMFS is to hold and distribute datasets. However, defaul
 
 \section{A layered approach}
 \label{sec:Layered_environment}
-To install software packages for our common environment, we follow a layered approach, as illustrated in Table~\ref{tab:layers}. First, we require a basic Linux installation. Any version of Linux with a kernel 2.6.32 or more recent should work. This layer is managed by the system administrators, and should contain any driver, such as GPU drivers or drivers for the network fabric, kernel modules, as well as privileged binaries. 
+To install software packages for our common environment, we follow a layered approach, as illustrated in Table~\ref{tab:layers}. First, we require a basic Linux installation. Any version of Linux with a kernel 2.6.32 (as used by RHEL 6 and its derivatives) or more recent should work. This layer is managed by the system administrators, and contains all drivers, typically provided by kernel modules and closely associated libraries, such as GPU and network drivers, as well as privileged binaries. 
 
 The second layer is what we call our compatibility layer. It contains almost all packages that one would typically install with the Linux distribution's package manager, such as {\it yum} or {\it apt-get}. 
 
-The third layer is the scientific application layer. It contains mostly scientific or performance critical applications, including for example MPI implementations, CUDA, mathematical libraries, and domain specific applications. 
+The third layer is the scientific application layer. It contains mostly scientific or performance critical applications, including for example MPI implementations, the CUDA toolkit, mathematical libraries, and domain specific applications. 
 
 \begin{figure*}
   \includegraphics[width=0.7\textwidth]{layers.png}
   \caption{Layered structure of our software stack. The bottom layer (red) is entirely managed by the system administrators of each cluster. The second layer (grey) contains libraries that can be installed centrally, through Nix, but can be overridden locally. The third layer (yellow) contains everything that one would typically find in the Linux user space. The fourth layer (green) contains packages that you would typically find in an operating system, but for which multiple versions are required. They are installed through Nix, but wrapped into a module by EasyBuild. The top layer (blue) contains packages that are not typically installed in a Linux distribution, and are installed via EasyBuild.}
-  \label{fig:layers}
+  \label{tab:layers}
 \end{figure*}
 
 \section{Compatibility layer}
@@ -238,17 +238,17 @@ Gentoo Prefix~\cite{Gentoo} is an alternative solution to provide a compatibilit
 \label{sub:Compiled_software_packages}
 Scientific applications constitute the majority of our software stack. Since their performance is critical, they can not be installed in the compatibility layer, as they need to be optimized for specific CPU instructions. To install them, we use the EasyBuild~\cite{EasyBuild2012,EasyBuild2014,EasyBuild2016} software installation tool.
 
-EasyBuild originated from the University of Ghent, but now has over 200 contributors from around the world. The framework is based on scripted recipes (in Python) to install packages, usually from source code. It is designed to create optimized binaries, and eases recompilation of multiple versions of a given application using many combinations of compilers or libraries. EasyBuild is composed of three parts: the framework, the EasyBlocks, and the EasyConfigs. 
+EasyBuild originated from the University of Ghent, but now has over 200 contributors from around the world. The framework is based on scripted recipes (in Python) to install packages, usually from source code. It is designed to create optimized binaries, and eases recompilation of multiple versions of a given application using many combinations of compilers or libraries. EasyBuild is composed of three parts: the framework, easyblocks, and easyconfig files (also known as easyconfigs). 
 
 The framework contains all of the core code which drives the logic of installing a software. It drives all of the steps necessary to install a software: parsing the configuration options, downloading source files, patching them, configuring, building and installing the software, as well as performing post-installation steps such as sanity checks, generating a module or running custom commands. 
 
-EasyBlocks are Python classes that define the steps required to install a given software package. There are generick EasyBlocks, such as {\it ConfigureMake} or {\it CMakeMake}, as well as custom EasyBlocks for packages that have more complicated installation procedures, such as OpenFOAM or PETSc. 
+Easyblocks are Python classes that define the steps required to install a given software package. There are generic easyblocks, such as {\it ConfigureMake} or {\it CMakeMake}, as well as custom easyblocks for packages that have more complicated installation procedures, such as OpenFOAM or PETSc. 
 
-EasyConfigs files parametrize the execution of the code from the EasyBlocks. They define the software name and version, the URL from which the source files can be downloaded as well as options to be used for the various steps. 
+Easyconfig files parametrize the execution of the code from the easyblocks. They define the software name and version, the URL from which the source files can be downloaded as well as options to be used for the various steps. 
 
-In most cases, there is already an EasyBlock for a given software package, or it can be installed easily with one of the generic EasyBlocks. In these cases, writing a new recipe is as simple as editing a configuration file. EasyBuild also supports command line options to reuse and existing EasyConfig file, while changing the software version or the toolchain being used. 
+In most cases, there is already an easyblock for a given software package, or it can be installed easily with one of the generic easyblocks. In these cases, writing a new recipe is as simple as editing a configuration file. EasyBuild also supports command line options to reuse an existing easyconfig file, while changing the software version or the toolchain being used. 
 
-Toolchains are a core concept in EasyBuild. They represent a set or subset of a compiler, an MPI implementation, mathematical libraries and CUDA. Having the ability to generate multiple builds of a given software simply by providing a command line argument to change the toolchain has proven unvaluable to our workflow, and has allowed us to recompile hundreds of packages in matter of days when deploying a new version of compiler or a cluster with a new CPU architecture. 
+Toolchains are a core concept in EasyBuild. They represent a set or subset of a compiler, an MPI implementation, mathematical libraries and CUDA. Having the ability to generate multiple builds of a given software simply by providing a command line argument to change the toolchain has proven invaluable to our workflow, and has allowed us to recompile hundreds of packages in matter of days when deploying a new version of compiler or a cluster with a new CPU architecture. 
 
 EasyBuild also automatically creates module files~\cite{Modules1991,Modules1996,Lmod}. The framework supports multiple standard and custom naming schemes. We use a version of a hierarchical naming scheme, in which modules are organized in a tree structure, hiding those that are incompatible with currently loaded modules. This limits the list of visible modules which could otherwise be very extensive. This can however throw off some users, since they don’t automatically see all available modules. Lmod~\cite{Lmod} alleviates this issue by providing a separate command to crawl the full module tree and instructs users on how to load the module they want.
 
