@@ -137,7 +137,7 @@ In 2016, Compute Canada set out to refresh its advanced computing infrastructure
 
 The first principle is that software packages should be available on every cluster (unless not possible because of license or hardware reasons). This meant that we needed a scalable resilient multi-site distribution mechanism. There are a few solutions that could be used, and we will discuss them in Section~\ref{sec:Distribution_mechanism}. The solution we opted for is CERN Virtual Machine File System, or CVMFS\cite{CVMFS}.
 
-The second principle is that the software environment should be decoupled from the underlying operating system. Since each tool for software package installation has strengths and weaknesses, we adopted a layered approach to benefit from the best tool for each kind of software package. We briefly described this in Section~\ref{sec:Layered_environment}.
+The second principle is that the software environment should be decoupled from the underlying operating system. Since each tool for software package installation has strengths and weaknesses, we adopted a layered approach to leverage the best tool for each kind of software package. We briefly describe this in Section~\ref{sec:Layered_environment}.
 
 When we first designed the solution, new clusters were being deployed with the CentOS 7 operating system. However, they did not all have the same set of system packages installed. Moreover, we were interested in supporting legacy clusters
 that were running CentOS 6, and virtual machines launched by users on several Compute Canada cloud platforms. In order to use the unified software environment on all of these systems, we needed a compatibility layer. 
@@ -147,7 +147,7 @@ The third principle is that installation procedures should be tracked and reprod
 
 The fourth principle is that the interface presented to users should be as familiar as possible, and remain manageable with a very large number of software packages installed. All of our clusters were using a system of environment modules \cite{Modules1991,Modules1996}. However, the traditional module systems become unwieldy at the scale of thousands of installed modules. Using a hierarchical module tree, which is possible in a newer implementation of environment modules called Lmod \cite{Lmod}, helps address this problem. We will discuss how our implementation meets the third and fourth principles in Section~\ref{sub:Compiled_software_packages}.
 
-Finally, we describe in Section~\ref{sec:Making_it_available} how you can make use of our software stack on your computer or cluster, mention other marginal benefits from our design in Section~\ref{sec:Other_benefits}.
+Finally, we describe in Section~\ref{sec:Making_it_available} how you can use our software stack on your computer or cluster, and summarize the benefits of our design in Section~\ref{sec:Conclusion}.
 
 \section{Distribution mechanism}
 \label{sec:Distribution_mechanism}
@@ -185,7 +185,7 @@ Both repositories above are available publicly, and can be mounted on any cluste
 
 There is a fourth CVMFS repository that distributes configuration files instead of software. This special configuration repository resembles \texttt{/etc/cvmfs/} and provides information (such as URLs and public keys) required by CVMFS clients in order to access all {\it other} repositories. The benefit of this approach is that most CVMFS configuration can be centrally managed, and updates can be immediately pushed to all clients in order to set up a new repository or commission or decommission a stratum 1 server, rather than having to wait for all clients across the country to be updated.
 
-One final use case for CVMFS is to distribute datasets. By default, CVMFS  is optimized for a large number of small files, rather than a small number of large files, so different  configurations and access methods are needed for data repositories. At the time of writing this paper, this is used by some of our research groups in genomics, but not directly by our staff. 
+One additional use case for CVMFS is to distribute datasets. By default, CVMFS  is optimized for a large number of small files, rather than a small number of large files, so different  configurations and access methods are needed for data repositories. At the time of writing this paper, this is used by some of our research groups in genomics, but not directly by our staff. 
 
 \begin{figure}
   \includegraphics[width=0.45\textwidth]{Software-installation-workflow.pdf}
@@ -240,7 +240,7 @@ Scientific applications constitute the majority of our software stack. Since the
 
 EasyBuild originated from the University of Ghent, but now has over 200 contributors from around the world. The framework is based on scripted recipes (in Python) to install packages, usually from source code. It is designed to create optimized binaries, and eases recompilation of multiple versions of a given application using many combinations of compilers or libraries. EasyBuild is composed of three parts: the framework, easyblocks, and easyconfig files (also known as ``easyconfigs''). 
 
-The framework contains all of the core code which drives the logic of installing a software package. It includes the following steps: parsing the configuration options, downloading source files, patching them, configuring, building and installing the software, as well as performing post-installation steps such as sanity checks, generating a module or running custom commands. 
+The framework contains all of the core code which drives the logic of the entire software installation process, including parsing the configuration options, downloading source files, patching them, configuring, building and installing the software, as well as performing post-installation steps such as sanity checks, generating a module or running custom commands. 
 
 Easyblocks are Python classes that define the steps required to install a given software package. There are generic easyblocks, such as \texttt{ConfigureMake} or \texttt{CMakeMake}, as well as custom easyblocks for packages that have more complicated installation procedures, such as OpenFOAM or PETSc. 
 
@@ -250,7 +250,7 @@ In most cases, there is already an easyblock for a given software package, or it
 
 Toolchains are a core concept in EasyBuild. They represent a set or subset of a compiler, an MPI implementation, mathematical libraries and CUDA. Having the ability to generate multiple builds of a given software simply by providing a command line argument to change the toolchain has proven invaluable to our workflow, and has allowed us to recompile hundreds of packages in a matter of days when deploying a new version of compiler or a cluster with a new CPU architecture. 
 
-EasyBuild also automatically creates module files~\cite{Modules1991,Modules1996,Lmod}. The framework supports multiple standard and custom naming schemes. We use a version of a hierarchical naming scheme, in which modules are organized in a tree structure, hiding those that are incompatible with currently loaded modules. This limits the list of visible modules which could otherwise be very extensive. This can however confuse some users, since they don’t automatically see all available modules. Lmod~\cite{Lmod} alleviates this issue by providing a separate command to crawl the full module tree and instructs users on how to load the module they want.
+EasyBuild also automatically creates module files~\cite{Modules1991,Modules1996,Lmod}. The framework supports multiple standard and custom naming schemes. We use a version of a hierarchical naming scheme, in which modules are organized in a tree structure, hiding those that are incompatible with currently loaded modules. This limits the list of visible modules, which could otherwise be very extensive. This can however confuse some users, since they don’t automatically see all available modules. Lmod~\cite{Lmod} alleviates this issue by providing a separate command to crawl the full module tree and instructs users on how to load the module they want.
 
 \subsection{Handling multiple CPU architectures}
 \label{sub:Handling_multiple_CPU_architectures}
@@ -277,8 +277,10 @@ Our module system will automatically log (through \texttt{logger}) each module t
 
 \section{Making the software environment available on your system}
 \label{sec:Making_it_available}
-Making our software environment available on a single computer is as simple as installing the CVMFS client and configuring repositories manually or installing our RPM
-\textbf{TODO: Document our RPM}
+Making our software environment available on a single computer is as simple as installing the CVMFS client and configuring repositories manually or installing our RPM. This is described on this webpage:
+\begin{center}
+    \url{https://docs.computecanada.ca/wiki/Accessing_our_software_environment_on_your_computer}
+\end{center}
 
 After CVMFS is configured, one can simply execute this command in order to set up Compute Canada's software environment: 
 
@@ -292,17 +294,15 @@ The default set of modules will automatically try to detect the most recent set 
 Note that the first time any software or data is accessed, it will take longer to load, as the CVMFS client is fetching the content from our stratum 1 servers. However, subsequent access will be much faster once the content is cached locally. 
 Also note that the command above will {\it not} import our environment for any user IDs lower than 1000, which are typically privileged users on a Linux system. In order to force the command above to execute nevertheless, you can create a file named \texttt{.force\_cc\_cvmfs} in the user's \texttt{\$HOME} directory. Conversely, a \texttt{\$HOME/.skip\_cc\_cvmfs} file can be created to exclude a user from setting up the software environment. This is recommended for system administrators so their environment does not depend on CVMFS, especially if they are doing operations which may interrupt access to CVMFS, such as updating or reconfiguring it.
 
-If you plan to use our CVMFS repositories on a large number of nodes such as a cluster, we require that you deploy one or more caching HTTP proxies, to avoid overloading the stratum 1 servers. If you are interested in testing or making our software environment available to your users on your cluster, we ask that you first contact us by writing to 
-\begin{center}
-\url{rsnt-software@computecanada.ca}    
-\end{center}
-Note that this software stack comes with absolutely no warranty. 
+If you plan to use our CVMFS repositories on a large number of nodes such as a cluster, we require that you deploy one or more caching HTTP proxies, to avoid overloading the stratum 1 servers. If you are interested in testing or making our software environment available to your users on your cluster, we ask that you first contact us as described in the webpage mentioned before. Note that this software stack comes with absolutely no warranty. 
 
-\section{Other benefits and conclusion}
+\section{Conclusion}
 \label{sec:Conclusion}
-We have built a software environment that is portable, is optimized for multiple CPU architectures and network interconnects, and can be deployed in a matter of minutes on a single node, and not much longer for a whole cluster. The design of the infrastructure guarantees that the software environment seen by our end users is the same across all of our clusters, and will not diverge over time. This makes for a better user experience, as it becomes much easier to migrate between two clusters. It also reduces the workload on our staff by unifying the installation process for all clusters, and makes supporting our users easier because all clusters work the same way.
+We have built a software environment that is portable, is optimized for multiple CPU architectures and network interconnects, and can be deployed in a matter of minutes on a single node, and not much longer for a whole cluster. The design of the infrastructure guarantees that the software environment seen by our end users is the same across all of our clusters, and will not diverge over time. This makes it much easier for users to use multiple clusters or migrate between clusters, improving the user experience. It also reduces the workload on our staff by unifying the installation process for all clusters, and makes supporting our users easier because all clusters work the same way.
 
-Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any virtual machine on a cloud. For example, for training events, we have been using it to provision small replicas of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this portable software environment to expose a cluster environment directly through a browser, via JupyterHub. It can also help support infrastructures owned by various institutions. This is the case of many universities in Canada that used to host a cluster which is now used by the institution only, or universities that deploy new local infrastructure and don't have the human resources to build a large software stack.
+Because of the portability of our software stack and the distribution mechanism, it can be used on any cluster, or any Linux computer or virtual machine on a cloud. For example, for training events, we have been using it to provision small replicas of Compute Canada clusters in short-lived virtual clusters deployed on our OpenStack platform. We have also used this portable software environment to expose a cluster environment directly through a browser, via JupyterHub. 
+
+Since software installation is no longer tightly coupled to any particular site or system, this approach has reduced the time required to commission major new Compute Canada clusters and make them accessible to our users by several months. At the same time, it also benefits universities and other research organizations running smaller or older clusters, desktops, and laboratory computing infrastructure, which may not have the human resources to build and maintain a comprehensive research software stack.
 
 
 \section{Acknowledgments}
