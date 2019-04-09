@@ -3,6 +3,8 @@
 \documentclass[sigconf]{acmart}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
+\usepackage{colortbl}
+\usepackage{amssymb}
 %
 % defining the \BibTeX command - from Oren Patashnik's original BibTeX documentation.
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08emT\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -48,7 +50,7 @@
 
 %
 % The "title" command has an optional parameter, allowing the author to define a "short title" to be used in page headers.
-\title{Providing a Unified Software Environment for Canada’s National Advanced Computing Centers}
+\title[A Unified Software Environment for Canada’s Advanced Computing Centers]{Providing a Unified Software Environment for Canada’s National Advanced Computing Centers}
 
 %
 % The "author" command and its associated commands are used to define the authors and their affiliations.
@@ -202,8 +204,33 @@ The second layer is what we call our compatibility layer. It contains almost all
 The third layer is the scientific application layer. It contains mostly scientific or performance critical applications, including for example MPI implementations, the CUDA toolkit, mathematical libraries, and domain specific applications. 
 
 \begin{figure*}
-  \includegraphics[width=0.7\textwidth]{layers.png}
-  \caption{Layered structure of our software stack. The bottom layer (red) is entirely managed by the system administrators of each cluster. The second layer (grey) contains libraries that can be installed centrally, through Nix, but can be overridden locally. The third layer (yellow) contains everything that one would typically find in the Linux user space. The fourth layer (green) contains packages that you would typically find in an operating system, but for which multiple versions are required. They are installed through Nix, but wrapped into a module by EasyBuild. The top layer (blue) contains packages that are not typically installed in a Linux distribution, and are installed via EasyBuild.}
+  \begin{center}
+  {\Large
+  \begin{tabular}{|p{0.7\textwidth}|}
+  \hline \cellcolor{cyan}
+  EasyBuild layer: modules for Intel, PGI, Open MPI, MKL, high-level applications.
+  Multiple instruction sets (SSE3, AVX, AVX2, AVX512).\newline
+  \texttt{/cvmfs/soft.computecanada.ca/easybuild/\{modules,software\}/2017}\\
+  \hline \cellcolor{green}
+  EasyBuild-generated modules around Nix profiles: for example Clang, Eclipse,
+  Erlang, FPC, GCC, Ruby.\newline
+  \texttt{/cvmfs/soft.computecanada.ca/nix/var/nix/profiles/[a-z]\**}\\
+  \hline \cellcolor{yellow}
+  Nix layer: GNU C Library (glibc), autotools, make, bash, cat, ls, awk, grep, etc. \newline
+  \texttt{module load nixpkgs/16.09 $\Rightarrow$ \$EBROOTNIXPKGS=} \newline
+  \texttt{/cvmfs/soft.computecanada.ca/nix/var/nix/profiles/16.09}\\
+  \hline \cellcolor{lightgray} 
+  Gray area: Lustre client libraries, IB/OmniPath/InfiniPath client libraries 
+  (all dependencies of Open MPI). In Nix layer, but can be overridden using
+  \texttt{PATH} and \texttt{LD\_LIBRARY\_PATH}.\\
+  \hline \cellcolor{pink}
+  OS kernel, daemons, drivers, libcuda, anything privileged (e.g. the sudo
+  command): always local. Some legally restricted software too, such as VASP.\\
+  \hline
+  \end{tabular}
+  }
+  \end{center}
+  \caption{Layered structure of our software stack. The bottom layer (pink) is entirely managed by the system administrators of each cluster. The second layer (grey) contains libraries that can be installed centrally, through Nix, but can be overridden locally. The third layer (yellow) contains everything that one would typically find in the Linux user space. The fourth layer (green) contains packages that you would typically find in an operating system, but for which multiple versions are required. They are installed through Nix, but wrapped into a module by EasyBuild. The top layer (cyan) contains packages that are not typically installed in a Linux distribution, and are installed via EasyBuild.}
   \label{tab:layers}
 \end{figure*}
 
@@ -225,7 +252,9 @@ Nix has a mechanism for garbage collection, which can be used to delete packages
 
 This works well until a software package exposes paths to the Nix store directly, instead of the paths to Nix profiles. We call this a Nix store leak. This happens for example with Python when using virtual environments. Virtual environments in Python copy the \texttt{python} executable to a secondary location, outside of Nix. However, all binaries installed by Nix use \texttt{RPATH} for shared object resolutions in the store directly. This means that copying a binary outside of Nix creates a dependency between a binary that now resides outside of the store, and the store itself. Because Nix is unaware of that dependency, any update of one of the dependencies followed by garbage collection or selective deployment of files will end up breaking this binary. We have encountered this issue with Python, Perl and Qt, which we have therefore moved outside of Nix and installed through EasyBuild instead.
 
-Also, we have found that many Nix recipes call for installing sub-packages of a package in separate directories. For example, for Qt, \texttt{qmake} and \texttt{qtpaths} or \texttt{qtdiag} reside in different directories in the Nix store. This sometimes causes issues when installing a dependent package which assumes that its dependencies are installed in a more traditional fashion, with all of the binaries in the same \texttt{bin/} directory, alongside headers in the \texttt{include/} directory and libraries in the \texttt{lib/} directory.  
+Also, we have found that many Nix recipes call for installing sub-packages of a package in separate directories. For example, for Qt, \texttt{qmake} and \texttt{qtpaths} or \texttt{qtdiag} reside in different directories in the Nix store. This sometimes causes issues when installing a dependent package which assumes that its dependencies are installed in a more traditional fashion, with all of the binaries in the same \texttt{bin/} directory, alongside headers in the \texttt{include/} directory and libraries in the \texttt{lib/} directory.
+
+In general, Nix provides an environment that is internally consistent but is best developed using Nix itself, through tools such as \texttt{nix-shell}. Such tools can only be used if the Nix store is writable, an impossibility with CVMFS. Attempting to use Nix in conjunction with other development tools using environment variables can be fragile at times. Moreover, the dependency of the hash on the whole installation recipe, instead of only the dependencies (as, for example, implemented in Spack~\cite{Spack}), causes the store path to change even if a bug fix or security update needs to be applied, aggravating this problem. We must note however, that some clusters in the Compute Canada provide Nix with a writable Nix store, which is completely separate from the software stack we are describing here.
 
 \subsection{Gentoo Prefix}
 \label{sub:Gentoo_Prefix}
@@ -294,7 +323,7 @@ The default set of modules will automatically try to detect the most recent set 
 Note that the first time any software or data is accessed, it will take longer to load, as the CVMFS client is fetching the content from our stratum 1 servers. However, subsequent access will be much faster once the content is cached locally. 
 Also note that the command above will {\it not} import our environment for any user IDs lower than 1000, which are typically privileged users on a Linux system. In order to force the command above to execute nevertheless, you can create a file named \texttt{.force\_cc\_cvmfs} in the user's \texttt{\$HOME} directory. Conversely, a \texttt{\$HOME/.skip\_cc\_cvmfs} file can be created to exclude a user from setting up the software environment. This is recommended for system administrators so their environment does not depend on CVMFS, especially if they are doing operations which may interrupt access to CVMFS, such as updating or reconfiguring it.
 
-If you plan to use our CVMFS repositories on a large number of nodes such as a cluster, we require that you deploy one or more caching HTTP proxies, to avoid overloading the stratum 1 servers. If you are interested in testing or making our software environment available to your users on your cluster, we ask that you first contact us as described in the webpage mentioned before. Note that this software stack comes with absolutely no warranty. 
+If you plan to use our CVMFS repositories on a large number of nodes such as a cluster, we require that you deploy one or more caching HTTP proxies, to avoid overloading the stratum 1 servers. If you are interested in testing or making our software environment available to your users on your cluster, we ask that you first contact us as described in the web page mentioned before. Note that this software stack comes with absolutely no warranty. 
 
 \section{Conclusion}
 \label{sec:Conclusion}
