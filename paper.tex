@@ -139,7 +139,7 @@ In 2016, Compute Canada set out to refresh its advanced computing infrastructure
 
 The first principle is that software packages should be available on every cluster (unless not possible because of license or hardware reasons). This meant that we needed a scalable resilient multi-site distribution mechanism. There are a few solutions that could be used, and we will discuss them in Section~\ref{sec:Distribution_mechanism}. The solution we opted for is CERN Virtual Machine File System, or CVMFS\cite{CVMFS}.
 
-The second principle is that the software environment should be decoupled from the underlying operating system. Since each tool for software package installation has strengths and weaknesses, we adopted a layered approach to leverage the best tool for each kind of software package. We briefly describe this in Section~\ref{sec:Layered_environment}.
+The second principle is that the software environment should be decoupled from the underlying operating system. Since each tool for software package installation has different strengths and weaknesses, we adopted a layered approach to leverage the best tool in each situation. We briefly describe this in Section~\ref{sec:Layered_environment}.
 
 When we first designed the solution, new clusters were being deployed with the CentOS 7 operating system. However, they did not all have the same set of system packages installed. Moreover, we were interested in supporting legacy clusters
 that were running CentOS 6, and virtual machines launched by users on several Compute Canada cloud platforms. In order to use the unified software environment on all of these systems, we needed a compatibility layer. 
@@ -163,9 +163,9 @@ We will describe the general architecture of a CVMFS deployment in Section~\ref{
 
 \subsection{CVMFS architecture}
 \label{sub:CVMFS_structure}
-CVMFS is designed similarly to the Network Time Protocol stratum model, as illustrated in Figure~\ref{fig:CVMFS_structure}. There is one source of truth, the stratum 0 server, where software is injected.  The stratum 0 is never accessed directly by clients. If it fails, the only immediate consequence is that injection of new files is not possible until it is back online. 
+CVMFS is designed similarly to the Network Time Protocol stratum model, as illustrated in Figure~\ref{fig:CVMFS_structure}. There is one source of truth, the stratum 0 server, where software is published.  The stratum 0 is never accessed directly by clients. If it fails, the only immediate consequence is that publishing new files is not possible until it is back online. 
 
-Snapshots of the software repositories on the stratum 0 are kept for a while, making it possible to roll back to a previous version if needed. Internally, CVMFS uses a content-addressable storage scheme, wherein files exceeding a certain size are broken into smaller objects, and each object is hashed, compressed, and stored in a location defined by its hash, resulting in automatic deduplication. Hashes also allow CVMFS clients to quickly verify the integrity of content received over the network, and invalidate their local caches when content is changed, by means of a Merkle tree.
+Snapshots of the software repositories on the stratum 0 are kept for a while, making it possible to roll back to a previous version if needed. Internally, CVMFS uses a content-addressable storage scheme, wherein files exceeding a certain size are broken into smaller objects, and each object is hashed, compressed, and stored in a location defined by its hash, resulting in automatic deduplication. Hashes also allow CVMFS clients to quickly verify the integrity of content received over the network, and quickly switch their repositories to new revisions when updates are published,  by means of a Merkle tree.
 
 Data is replicated from the stratum 0 to multiple stratum 1 servers, which in turn serve content to clients via HTTP and provide redundancy and load balancing. Each cluster has local caching proxy servers to reduce the load placed on the stratum 1 servers by its compute nodes, accelerate access to any content missing from the local cache of a compute node, and mitigate the impact of a wide area network outage. The closest layer of cache can be configured to use a local disk on a node, or a shared file system in a diskless environment. Clients can also be configured to use two levels of cache together in a tiered manner, such as a solid state drive and a hard drive, or a hard drive and a shared file system.
 
@@ -181,13 +181,13 @@ For Compute Canada's needs, we deployed two CVMFS server stacks, one for develop
 
 First, we have a development repository, hosted on the development servers. This repository is used to deploy software from our build infrastructure to the clusters without exposing it to end users. This allows us to test newly installed software packages on our clusters without impacting production, minimizing the risk of a faulty package causing problems for users. This is especially important, for example, when testing updates to software packages to fix bugs, or to make minor changes to an MPI implementation in order to correctly support a new cluster with a different networking fabric. 
 
-We also have a production repository, hosted on the production servers. By design, software packages are always copied to the production repository from the development repository, and never directly from the build infrastructure. This step also minimizes the risk of faulty software affecting end users. This repository holds all of the software environment which is visible to the end users on all of our clusters. Once software is published to this repository, it becomes visible on all clusters within about 10 minutes. 
+We also have a production repository, hosted on the production servers. By design, software packages are always copied to the production repository from the development repository, and never directly from the build infrastructure. This step also minimizes the risk of faulty software affecting end users. This repository holds the software environment which is visible to the end users on all of our clusters. Once software is published to this repository, it becomes visible on all clusters within about 10 minutes. 
 
 Both repositories above are available publicly, and can be mounted on any cluster or virtual machine in the cloud. There is a third repository, also hosted on the production servers, which provides software packages that are restricted to Compute Canada due to license limitations. We work with software vendors and developers in order to get the authorization to install licensed and commercial software packages in this repository. The most common licensing model that we use is a BYOL (bring your own license) model, in which we provide the software package, but end users provide a license server to connect to. Another model is to control access to a software package via POSIX groups. By default, the repository content on a CVMFS client belongs to a \texttt{cvmfs} service account and group, but this can be changed so that the original ownership metadata as published on the stratum 0 is used, thereby only allowing access to members of authorized POSIX groups. Since this relies on a specific LDAP domain and client configuration, access to this repository is restricted by network ACLs on the stratum 1 servers, and can only be granted to clusters that are run by Compute Canada teams. 
 
 There is a fourth CVMFS repository that distributes configuration files instead of software. This special configuration repository resembles \texttt{/etc/cvmfs/} and provides information (such as URLs and public keys) required by CVMFS clients in order to access all {\it other} repositories. The benefit of this approach is that most CVMFS configuration can be centrally managed, and updates can be immediately pushed to all clients in order to set up a new repository or commission or decommission a stratum 1 server, rather than having to wait for all clients across the country to be updated.
 
-One additional use case for CVMFS is to distribute datasets. By default, CVMFS  is optimized for a large number of small files, rather than a small number of large files, so different  configurations and access methods are needed for data repositories. At the time of writing this paper, this is used by some of our research groups in genomics, but not directly by our staff. 
+One additional use case for CVMFS is to distribute datasets. By default, CVMFS  is optimized for a large number of small files, rather than a small number of large files, so different configurations and access methods are needed for data repositories. At the time of writing this paper, data repositories are used by some of our research groups in genomics, but not directly by our staff yet. 
 
 \begin{figure}
   \includegraphics[width=0.45\textwidth]{Software-installation-workflow.pdf}
@@ -199,11 +199,11 @@ One additional use case for CVMFS is to distribute datasets. By default, CVMFS  
 \label{sec:Layered_environment}
 To install software packages for our common environment, we follow a layered approach, as illustrated in Table~\ref{tab:layers}. First, we require a basic Linux installation. Any version of Linux with a kernel 2.6.32 (as used by RHEL 6 and its derivatives) or more recent should work. This layer is managed by the system administrators, and contains all drivers, typically provided by kernel modules and closely associated libraries, such as GPU and network drivers, as well as privileged binaries. 
 
-The second layer is what we call our compatibility layer. It contains almost all packages that one would typically install with the Linux distribution's package manager, such as \texttt{yum} or \texttt{apt-get}. 
+The second and third layers constitute what we call our compatibility layer, containing almost all packages that one would typically install with the Linux distribution's package manager, such as \texttt{yum} or \texttt{apt-get}. 
 
-The third layer is the scientific application layer. It contains mostly scientific or performance critical applications, including for example MPI implementations, the CUDA toolkit, mathematical libraries, and domain specific applications. 
+The fourth and fifth layers are the scientific application layers. They contain mostly scientific or performance critical applications, including for example MPI implementations, the CUDA toolkit, mathematical libraries, and domain specific applications. 
 
-\begin{figure*}
+\begin{table*}
   \begin{center}
   {\Large
   \begin{tabular}{|p{0.7\textwidth}|}
@@ -230,31 +230,31 @@ The third layer is the scientific application layer. It contains mostly scientif
   \end{tabular}
   }
   \end{center}
-  \caption{Layered structure of our software stack. The bottom layer (pink) is entirely managed by the system administrators of each cluster. The second layer (grey) contains libraries that can be installed centrally, through Nix, but can be overridden locally. The third layer (yellow) contains everything that one would typically find in the Linux user space. The fourth layer (green) contains packages that you would typically find in an operating system, but for which multiple versions are required. They are installed through Nix, but wrapped into a module by EasyBuild. The top layer (cyan) contains packages that are not typically installed in a Linux distribution, and are installed via EasyBuild.}
+  \caption{Layered structure of our software stack. The bottom layer (pink) is entirely managed by the system administrators of each cluster and is not on CVMFS. The second layer (grey) contains libraries that are available via Nix on CVMFS, but can be overridden locally. The third layer (yellow) contains everything that one would typically find in the Linux user space. The fourth layer (green) contains packages that you would typically find in an operating system, but for which multiple versions are required. They are installed through Nix, but wrapped into a module by EasyBuild. The top layer (cyan) contains packages that are not typically installed in a Linux distribution, and are installed via EasyBuild.}
   \label{tab:layers}
-\end{figure*}
+\end{table*}
 
 \section{Compatibility layer}
 \label{sec:Compatibility_layer}
-Isolating the software environment from the operating system requires a compatibility layer containing almost everything that an OS would provide. We exclude the Linux kernel and its modules, hardware drivers, and privileged binaries from this layer.
+Isolating the software environment from the operating system requires a compatibility layer containing almost everything that an OS would provide. We exclude the Linux kernel and its modules, hardware drivers, and privileged binaries from this layer. However, some libraries such as InfiniBand client libraries that are close to the hardware are also available in this layer (the gray area in Table~\ref{tab:layers}) and can optionally be used, or can be provided locally outside CVMFS.
 
 \subsection{Nix}
 \label{sub:Nix}
 Nix~\cite{Nix} is both a package manager and an operating system (NixOS). One of the core principles in Nix is reproducibility, so it is designed to depend as little as possible on the underlying operating system. 
 
-The installation path of each software package installed through Nix resides in a path called the Nix store. This store contains a single directory for each version of each software package installed through Nix. These directories are named after a hash calculated from the installation recipe and its dependencies. This creates a very large number of subdirectories, many of which contain almost identical files. 
+The installation path of each software package installed through Nix resides in a path called the Nix store. This store contains a single directory for each version of each software package installed through Nix. These directories are named after a hash calculated from the installation recipe and its dependencies. This creates a very large number of subdirectories, many of which contain nearly identical files. 
 
-In addition to the store, Nix creates directories that are called profiles. These profile directories contain a forest of symbolic links that point to files in the Nix store. For example, it contains a \texttt{bin/} directory, which contains symbolic links to typical operating system commands such as \texttt{ls} and \texttt{gcc}, which reside in different paths in the store. A profile directory also contains \texttt{lib/} and \texttt{include/} directories which contain symbolic links to libraries and header files located in the store. 
+In addition to the store, Nix creates directories that are called profiles. These profile directories contain a forest of symbolic links that point to files in the Nix store. For example, each profile contains a \texttt{bin/} directory, which contains symbolic links to typical operating system commands such as \texttt{ls} and \texttt{gcc}, which reside in different paths in the store. A profile directory also contains \texttt{lib/} and \texttt{include/} directories which contain symbolic links to libraries and header files located in the store. We provide one main profile as the compatibility layer and some custom profiles for applications from that layer for which we provide multiple versions via modules that are generated by EasyBuild. Those custom profiles hence provide a hybrid between the top layer and the compatibility layer.
 
-Profiles are the paths that are exposed to the end users, which is done by adding paths to their \texttt{PATH}, \texttt{CPATH} and other similar environment variables. Each profile ever created is kept, but users are only exposed to the most recent one. Each profile represents the complete state of the user-exposed environment at a given time.
+Profiles are the paths that are exposed to the end users, which is done by adding paths to their \texttt{PATH}, \texttt{CPATH} and other similar environment variables. Each profile ever created is kept, but users are only exposed to the most recent one. Each profile represents the complete state of the user-accessible environment at a given time.
 
 Nix has a mechanism for garbage collection, which can be used to delete packages that are no longer used in the current profile. It also has a mechanism to resolve the complete list of files from the Nix store that are required to compose a given profile. Because Nix generates so many files, we use this mechanism to deploy on CVMFS only those files that are used in the current profile. 
 
-This works well until a software package exposes paths to the Nix store directly, instead of the paths to Nix profiles. We call this a Nix store leak. This happens for example with Python when using virtual environments. Virtual environments in Python copy the \texttt{python} executable to a secondary location, outside of Nix. However, all binaries installed by Nix use \texttt{RPATH} for shared object resolutions in the store directly. This means that copying a binary outside of Nix creates a dependency between a binary that now resides outside of the store, and the store itself. Because Nix is unaware of that dependency, any update of one of the dependencies followed by garbage collection or selective deployment of files will end up breaking this binary. We have encountered this issue with Python, Perl and Qt, which we have therefore moved outside of Nix and installed through EasyBuild instead.
+This works well until a software package exposes paths to the Nix store directly, instead of the paths to Nix profiles. We call this a Nix store leak. This happens for example with Python when using virtual environments. Virtual environments in Python copy the \texttt{python} executable to a secondary location, outside of Nix. However, all binaries installed by Nix use \texttt{RPATH} for shared object resolution directly in the store. This means that copying a binary outside of Nix creates a dependency between a binary that now resides outside of the store, and the store itself. Because Nix is unaware of that dependency, any update of one of the dependencies followed by garbage collection or selective deployment of files will end up breaking this binary. We have encountered this issue with Python, Perl and Qt, which we have therefore moved outside of Nix and installed through EasyBuild instead.
 
 Also, we have found that many Nix recipes call for installing sub-packages of a package in separate directories. For example, for Qt, \texttt{qmake} and \texttt{qtpaths} or \texttt{qtdiag} reside in different directories in the Nix store. This sometimes causes issues when installing a dependent package which assumes that its dependencies are installed in a more traditional fashion, with all of the binaries in the same \texttt{bin/} directory, alongside headers in the \texttt{include/} directory and libraries in the \texttt{lib/} directory.
 
-In general, Nix provides an environment that is internally consistent but is best developed using Nix itself, through tools such as \texttt{nix-shell}. Such tools can only be used if the Nix store is writable, an impossibility with CVMFS. Attempting to use Nix in conjunction with other development tools using environment variables can be fragile at times. Moreover, the dependency of the hash on the whole installation recipe, instead of only the dependencies (as, for example, implemented in Spack~\cite{Spack}), causes the store path to change even if a bug fix or security update needs to be applied, aggravating this problem. We must note however, that some clusters in the Compute Canada provide Nix with a writable Nix store, which is completely separate from the software stack we are describing here.
+In general, Nix provides an environment that is internally consistent but is best developed using Nix itself, through tools such as \texttt{nix-shell}. Such tools can only be used if the Nix store is writable, an impossibility with CVMFS. Attempting to use Nix in conjunction with other development tools using environment variables can be fragile at times. Moreover, the dependency of the hash on the whole installation recipe, instead of only the dependencies (as, for example, implemented in Spack~\cite{Spack}), causes the store path to change even if a bug fix or security update needs to be applied, aggravating this problem. We must note however, that some clusters in Compute Canada provide Nix with a writable Nix store, which is completely separate from the software stack described here.
 
 \subsection{Gentoo Prefix}
 \label{sub:Gentoo_Prefix}
@@ -269,7 +269,7 @@ Scientific applications constitute the majority of our software stack. Since the
 
 EasyBuild originated from the University of Ghent, but now has over 200 contributors from around the world. The framework is based on scripted recipes (in Python) to install packages, usually from source code. It is designed to create optimized binaries, and eases recompilation of multiple versions of a given application using many combinations of compilers or libraries. EasyBuild is composed of three parts: the framework, easyblocks, and easyconfig files (also known as ``easyconfigs''). 
 
-The framework contains all of the core code which drives the logic of the entire software installation process, including parsing the configuration options, downloading source files, patching them, configuring, building and installing the software, as well as performing post-installation steps such as sanity checks, generating a module or running custom commands. 
+The framework contains the core code which drives the logic of the entire software installation process, including parsing the configuration options, downloading source files, patching them, configuring, building and installing the software, as well as performing post-installation steps such as sanity checks, generating a module or running custom commands. 
 
 Easyblocks are Python classes that define the steps required to install a given software package. There are generic easyblocks, such as \texttt{ConfigureMake} or \texttt{CMakeMake}, as well as custom easyblocks for packages that have more complicated installation procedures, such as OpenFOAM or PETSc. 
 
@@ -306,24 +306,25 @@ Our module system will automatically log (through \texttt{logger}) each module t
 
 \section{Making the software environment available on your system}
 \label{sec:Making_it_available}
-Making our software environment available on a single computer is as simple as installing the CVMFS client and configuring repositories manually or installing our RPM. This is described on this webpage:
+To access the Compute Canada repositories on your own computer, you can install and configure the CVMFS client as described here:
 \begin{center}
     \url{https://docs.computecanada.ca/wiki/Accessing_CVMFS}
 \end{center}
 
-After CVMFS is configured, one can simply execute this command in order to set up Compute Canada's software environment: 
+Then, to set up the Compute Canada software environment, simply execute this command: 
 
 \begin{center}
 \texttt{source \textbackslash \linebreak
 /cvmfs/soft.computecanada.ca/config/profile/bash.sh}
 \end{center}
 
+If you plan to use our CVMFS repositories on a large number of nodes such as a cluster, or to present our software environment to your users, we ask that you first contact us as described in the documentation web page above. Also, if you set up a large number of client nodes we require that you deploy them behind one or more caching HTTP proxies, to avoid overloading the stratum 1 servers. Note that this software stack is provided as is and comes with absolutely no warranty. 
+
 The default set of modules will automatically try to detect the most recent set of instructions that is supported by the CPU amongst  SSE3, AVX, AVX2 and AVX512. It will also try to detect whether the hardware has a Mellanox InfiniBand, Intel OmniPath, or Ethernet network fabric. If these are not detected correctly, or if you have a cluster made up of mixed hardware, you can overwrite these defaults by defining the \texttt{RSNT\_ARCH} or \texttt{RSNT\_INTERCONNECT} environment variables before executing the command above. 
 
 Note that the first time any software or data is accessed, it will take longer to load, as the CVMFS client is fetching the content from our stratum 1 servers. However, subsequent access will be much faster once the content is cached locally. 
 Also note that the command above will {\it not} import our environment for any user IDs lower than 1000, which are typically privileged users on a Linux system. In order to force the command above to execute nevertheless, you can create a file named \texttt{.force\_cc\_cvmfs} in the user's \texttt{\$HOME} directory. Conversely, a \texttt{\$HOME/.skip\_cc\_cvmfs} file can be created to exclude a user from setting up the software environment. This is recommended for system administrators so their environment does not depend on CVMFS, especially if they are doing operations which may interrupt access to CVMFS, such as updating or reconfiguring it.
 
-If you plan to use our CVMFS repositories on a large number of nodes such as a cluster, we require that you deploy one or more caching HTTP proxies, to avoid overloading the stratum 1 servers. If you are interested in testing or making our software environment available to your users on your cluster, we ask that you first contact us as described in the web page mentioned before. Note that this software stack comes with absolutely no warranty. 
 
 \section{Conclusion}
 \label{sec:Conclusion}
